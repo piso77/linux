@@ -1,0 +1,61 @@
+name: M68K Linux build and pkg release
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  M68K_CROSS_URL: https://mirrors.edge.kernel.org/pub/tools/crosstool/files/bin/x86_64/11.1.0/x86_64-gcc-11.1.0-nolibc-m68k-linux.tar.gz
+  M68K_CROSS_DIR: gcc-11.1.0-nolibc
+
+jobs:
+  pkg-build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Linux build deps / m68k cross compiler
+        run: |
+          cp /etc/apt/sources.list .
+          sed 's/# deb-src/deb-src/' sources.list > tmp
+          sudo mv tmp /etc/apt/sources.list
+          sudo apt-get update
+          sudo apt-get build-dep linux
+          wget -O - "${M68K_CROSS_URL}" | sudo tar zxvf - -C /usr/local
+          echo "/usr/local/${M68K_CROSS_DIR}/m68k-linux/bin" >> $GITHUB_PATH
+
+      - name: Build m68k kernel
+        run: |
+          mkdir -p output
+          git clean -ffdx
+          make CROSS_COMPILE=m68k-linux- ARCH=m68k O=output defconfig
+          make CROSS_COMPILE=m68k-linux- ARCH=m68k O=output -j`nproc`
+          make CROSS_COMPILE=m68k-linux- ARCH=m68k O=output dir-pkg
+
+      - name: Tar up built kernel and kmods
+        run: |
+          cd output/tar-install
+          tar zcvf ../tar-install.tgz *
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/tar-install.tgz
+          asset_name: tar-install.tgz
+          asset_content_type: application/octet-stream
