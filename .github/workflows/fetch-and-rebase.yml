@@ -1,0 +1,26 @@
+name: Fetch upstream and rebase
+on:
+  schedule:
+  - cron: "0 */8 * * *"  # run every 8 hour
+  workflow_dispatch:    # run manually
+
+jobs:
+  sync:
+    runs-on: ubuntu-20.04
+    steps:
+    - env:
+      GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Fetch, rebase and push
+      shell: bash
+      run: |
+        set -ex;
+        git config user.email github-actions@github.com
+        git config user.name github-actions
+
+        git remote add upstream https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+        git fetch -t upstream master
+        git rebase upstream/master
+        git push -fv --follow-tags origin HEAD:master
