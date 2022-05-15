@@ -8,9 +8,11 @@ jobs:
   sync:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout Repo
+      uses: actions/checkout@v2
       with:
         fetch-depth: 0
+        token: ${{ secrets.FETCH_REBASE_TOKEN }}
     - name: Fetch, rebase and push
       shell: bash
       run: |
