@@ -1,8 +1,8 @@
 name: Fetch upstream and rebase
 on:
   schedule:
-  - cron: "0 */8 * * *"  # run every 8 hour
-  workflow_dispatch:    # run manually
+  - cron: "0 */2 * * *"  # run every 2 hour
+  workflow_dispatch:     # run manually
 
 jobs:
   sync:
