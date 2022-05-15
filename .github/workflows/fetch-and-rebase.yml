@@ -4,9 +4,6 @@ on:
   - cron: "0 */8 * * *"  # run every 8 hour
   workflow_dispatch:    # run manually
 
-env:
-  GITHUB_TOKEN: ${{ secrets.PUSHTOKEN }}
-
 jobs:
   sync:
     runs-on: ubuntu-20.04
