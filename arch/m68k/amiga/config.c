@@ -181,6 +181,15 @@ int amiga_parse_bootinfo(const struct bi_record *record)
 			dev->slotsize = cd->cd_SlotSize;
 			dev->resource.start = (unsigned long)cd->cd_BoardAddr;
 			dev->resource.end = dev->resource.start + cd->cd_BoardSize - 1;
+
+			/* CS-LAB Warp 1260 workaround */
+			if (be16_to_cpu(dev->rom.er_Manufacturer) == ZORRO_MANUF(ZORRO_PROD_CSLAB_WARP_1260) &&
+			    dev->rom.er_Product == ZORRO_PROD(ZORRO_PROD_CSLAB_WARP_1260)) {
+
+				/* turn off all interrupts */
+				pr_info("Warp 1260 card detected: applying interrupt storm workaround");
+				*(uint32_t *)(dev->resource.start + 0x1000) = 0x0FFF;
+			}
 		} else
 			printk("amiga_parse_bootinfo: too many AutoConfig devices\n");
 #endif /* CONFIG_ZORRO */
