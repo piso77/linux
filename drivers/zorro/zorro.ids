@@ -400,6 +400,11 @@
 	0100  ISDN Blaster Z2 [ISDN Interface]
 	0200  HyperCom 4 [Multi I/O]
 	0600  HyperCom 4+ [Multi I/O]
+1400 CSLab
+	6000  Warp DDR3 Memory
+	0001  Warp Video Memory
+	0101  Warp Control Registers
+	0201  Warp Flash ROM
 157c  Information
 	6400  ISDN Engine I [ISDN Interface]
 2017  Vortex
