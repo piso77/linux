@@ -3,6 +3,8 @@
 # Makefile for the kernel pcmcia subsystem (c/o David Hinds)
 #
 
+ccflags-y += -DDEBUG
+
 pcmcia_core-y					+= cs.o socket_sysfs.o
 pcmcia_core-$(CONFIG_CARDBUS)			+= cardbus.o
 obj-$(CONFIG_PCCARD)				+= pcmcia_core.o
