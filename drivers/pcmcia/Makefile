@@ -11,6 +11,7 @@ obj-$(CONFIG_PCMCIA)				+= pcmcia.o
 
 pcmcia_rsrc-y					+= rsrc_mgr.o
 pcmcia_rsrc-$(CONFIG_PCCARD_NONSTATIC)		+= rsrc_nonstatic.o
+pcmcia_rsrc-$(CONFIG_PCCARD_SEMISTATIC)		+= rsrc_semistatic.o
 pcmcia_rsrc-$(CONFIG_PCCARD_IODYN)		+= rsrc_iodyn.o
 obj-$(CONFIG_PCCARD)				+= pcmcia_rsrc.o
 
@@ -33,6 +34,7 @@ obj-$(CONFIG_PCMCIA_AU1X00)			+= au1x00_ss.o
 obj-$(CONFIG_PCMCIA_BCM63XX)			+= bcm63xx_pcmcia.o
 obj-$(CONFIG_PCMCIA_VRC4171)			+= vrc4171_card.o
 obj-$(CONFIG_PCMCIA_VRC4173)			+= vrc4173_cardu.o
+obj-$(CONFIG_PCMCIA_GAYLE)			+= gayle.o
 obj-$(CONFIG_OMAP_CF)				+= omap_cf.o
 obj-$(CONFIG_BFIN_CFPCMCIA)			+= bfin_cf_pcmcia.o
 obj-$(CONFIG_AT91_CF)				+= at91_cf.o
