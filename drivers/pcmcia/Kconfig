@@ -221,6 +221,15 @@ config PCMCIA_PXA2XX
 	help
 	  Say Y here to include support for the PXA2xx PCMCIA controller
 
+config PCMCIA_GAYLE
+	tristate "Gayle support"
+	depends on AMIGA && PCMCIA && EXPERIMENTAL
+	select AMIGA_PCMCIA
+	select PCCARD_SEMISTATIC
+	help
+	  Say Y here to include support for the PCMCIA socket
+	  found on the A600 and A1200.
+
 config PCMCIA_DEBUG
 	bool "Enable debugging"
 	depends on (PCMCIA_SA1111 || PCMCIA_SA1100 || PCMCIA_PXA2XX)
@@ -241,7 +250,7 @@ config PCMCIA_DEBUG
 
 config PCMCIA_PROBE
 	bool
-	default y if ISA && !ARCH_SA1100 && !ARCH_CLPS711X && !PARISC
+	default y if ISA && !ARCH_SA1100 && !ARCH_CLPS711X && !PARISC && !AMIGA
 
 config M32R_PCC
 	bool "M32R PCMCIA I/F"
@@ -299,6 +308,9 @@ config ELECTRA_CF
 	  PA Semi Electra eval board.
 
 config PCCARD_NONSTATIC
+	bool
+
+config PCCARD_SEMISTATIC
 	bool
 
 config PCCARD_IODYN
