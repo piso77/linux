@@ -100,7 +100,12 @@ enum c509status {
 	RxComplete	= 0x0010,
 	RxEarly		= 0x0020,
 	IntReq		= 0x0040,
+#ifndef CONFIG_PCMCIA_GAYLE
 	StatsFull	= 0x0080,
+#else
+	/* The statistics registers can't be read with Gayle :-( */
+	StatsFull	= 0x0000,
+#endif
 	CmdBusy		= 0x1000
 };
 
