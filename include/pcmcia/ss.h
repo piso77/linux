@@ -242,6 +242,7 @@ struct pcmcia_socket {
  *
  */
 extern struct pccard_resource_ops pccard_static_ops;
+extern struct pccard_resource_ops pccard_semistatic_ops;
 #if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
 extern struct pccard_resource_ops pccard_iodyn_ops;
 extern struct pccard_resource_ops pccard_nonstatic_ops;
