@@ -38,6 +38,8 @@
 #include <linux/etherdevice.h>
 #include <linux/jiffies.h>
 
+#include <pcmcia/ss.h>
+
 #include <asm/system.h>
 #include <asm/io.h>
 #include <asm/setup.h>
@@ -85,8 +87,6 @@ static void apne_block_input(struct net_device *dev, int count,
 								struct sk_buff *skb, int ring_offset);
 static void apne_block_output(struct net_device *dev, const int count,
 							const unsigned char *buf, const int start_page);
-static irqreturn_t apne_interrupt(int irq, void *dev_id);
-
 static int init_pcmcia(void);
 
 /* IO base address used for nic */
@@ -150,7 +150,7 @@ struct net_device * __init apne_probe(int unit)
 	}
 
 	/* disable pcmcia irq for readtuple */
-	pcmcia_disable_irq();
+	// pcmcia_disable_irq();
 
 #ifndef MANUAL_CONFIG
 	if ((pcmcia_copy_tuple(CISTPL_FUNCID, tuple, 8) < 3) ||
@@ -175,8 +175,11 @@ struct net_device * __init apne_probe(int unit)
 		return ERR_PTR(-EBUSY);
 	}
 
+	gayle_set_io_win(0, MAP_ACTIVE|MAP_AUTOSZ, IOBASE, IOBASE+0x1f);
+
 	err = apne_probe1(dev, IOBASE);
 	if (err) {
+		gayle_set_io_win(0, 0, 0, 0);
 		release_region(IOBASE, 0x20);
 		free_netdev(dev);
 		return ERR_PTR(err);
@@ -185,9 +188,8 @@ struct net_device * __init apne_probe(int unit)
 	if (!err)
 		return dev;
 
-	pcmcia_disable_irq();
-	free_irq(IRQ_AMIGA_PORTS, dev);
-	pcmcia_reset();
+	free_irq(IRQ_AMIGA_GAYLE_IRQ, dev);
+	gayle_set_io_win(0, 0, 0, 0);
 	release_region(IOBASE, 0x20);
 	free_netdev(dev);
 	return ERR_PTR(err);
@@ -310,11 +312,11 @@ static int __init apne_probe1(struct net_device *dev, int ioaddr)
 #endif
 
     dev->base_addr = ioaddr;
-    dev->irq = IRQ_AMIGA_PORTS;
+    dev->irq = IRQ_AMIGA_GAYLE_IRQ;
     dev->netdev_ops = &ei_netdev_ops;
 
     /* Install the Interrupt handler */
-    i = request_irq(dev->irq, apne_interrupt, IRQF_SHARED, DRV_NAME, dev);
+    i = request_irq(dev->irq, ei_interrupt, 0, DRV_NAME, dev);
     if (i) return i;
 
     for(i = 0; i < ETHER_ADDR_LEN; i++)
@@ -337,9 +339,6 @@ static int __init apne_probe1(struct net_device *dev, int ioaddr)
     ei_status.get_8390_hdr = &apne_get_8390_hdr;
 
     NS8390_init(dev, 0);
-
-    pcmcia_ack_int(pcmcia_get_intreq());		/* ack PCMCIA int req */
-    pcmcia_enable_irq();
 
     apne_owned = 1;
 
@@ -380,9 +379,6 @@ apne_get_8390_hdr(struct net_device *dev, struct e8390_pkt_hdr *hdr, int ring_pa
 {
 
     int nic_base = dev->base_addr;
-    int cnt;
-    char *ptrc;
-    short *ptrs;
 
     /* This *shouldn't* happen. If it does, it's the last thing you'll see */
     if (ei_status.dmaing) {
@@ -401,15 +397,10 @@ apne_get_8390_hdr(struct net_device *dev, struct e8390_pkt_hdr *hdr, int ring_pa
     outb(ring_page, nic_base + NE_EN0_RSARHI);
     outb(E8390_RREAD+E8390_START, nic_base + NE_CMD);
 
-    if (ei_status.word16) {
-        ptrs = (short*)hdr;
-        for(cnt = 0; cnt < (sizeof(struct e8390_pkt_hdr)>>1); cnt++)
-            *ptrs++ = inw(NE_BASE + NE_DATAPORT);
-    } else {
-        ptrc = (char*)hdr;
-        for(cnt = 0; cnt < sizeof(struct e8390_pkt_hdr); cnt++)
-            *ptrc++ = inb(NE_BASE + NE_DATAPORT);
-    }
+    if (ei_status.word16)
+	    insw(NE_BASE + NE_DATAPORT, hdr, sizeof(struct e8390_pkt_hdr)>>1);
+    else
+	    insb(NE_BASE + NE_DATAPORT, hdr, sizeof(struct e8390_pkt_hdr));
 
     outb(ENISR_RDC, nic_base + NE_EN0_ISR);	/* Ack intr. */
     ei_status.dmaing &= ~0x01;
@@ -427,9 +418,6 @@ apne_block_input(struct net_device *dev, int count, struct sk_buff *skb, int rin
 {
     int nic_base = dev->base_addr;
     char *buf = skb->data;
-    char *ptrc;
-    short *ptrs;
-    int cnt;
 
     /* This *shouldn't* happen. If it does, it's the last thing you'll see */
     if (ei_status.dmaing) {
@@ -447,16 +435,11 @@ apne_block_input(struct net_device *dev, int count, struct sk_buff *skb, int rin
     outb(ring_offset >> 8, nic_base + NE_EN0_RSARHI);
     outb(E8390_RREAD+E8390_START, nic_base + NE_CMD);
     if (ei_status.word16) {
-      ptrs = (short*)buf;
-      for (cnt = 0; cnt < (count>>1); cnt++)
-        *ptrs++ = inw(NE_BASE + NE_DATAPORT);
-      if (count & 0x01) {
-	buf[count-1] = inb(NE_BASE + NE_DATAPORT);
-      }
+	    insw(NE_BASE + NE_DATAPORT,buf,count>>1);
+	    if (count & 0x01)
+		    buf[count-1] = inb(NE_BASE + NE_DATAPORT);
     } else {
-      ptrc = (char*)buf;
-      for (cnt = 0; cnt < count; cnt++)
-        *ptrc++ = inb(NE_BASE + NE_DATAPORT);
+	    insb(NE_BASE + NE_DATAPORT, buf, count);
     }
 
     outb(ENISR_RDC, nic_base + NE_EN0_ISR);	/* Ack intr. */
@@ -469,9 +452,6 @@ apne_block_output(struct net_device *dev, int count,
 {
     int nic_base = NE_BASE;
     unsigned long dma_start;
-    char *ptrc;
-    short *ptrs;
-    int cnt;
 
     /* Round the count up for word writes.  Do we need to do this?
        What effect will an odd byte count have on the 8390?
@@ -500,13 +480,9 @@ apne_block_output(struct net_device *dev, int count,
 
     outb(E8390_RWRITE+E8390_START, nic_base + NE_CMD);
     if (ei_status.word16) {
-        ptrs = (short*)buf;
-        for (cnt = 0; cnt < count>>1; cnt++)
-            outw(*ptrs++, NE_BASE+NE_DATAPORT);
+	    outsw(NE_BASE + NE_DATAPORT, buf, count>>1);
     } else {
-        ptrc = (char*)buf;
-        for (cnt = 0; cnt < count; cnt++)
-	    outb(*ptrc++, NE_BASE + NE_DATAPORT);
+	    outsb(NE_BASE + NE_DATAPORT, buf, count);
     }
 
     dma_start = jiffies;
@@ -521,28 +497,6 @@ apne_block_output(struct net_device *dev, int count,
 
     outb(ENISR_RDC, nic_base + NE_EN0_ISR);	/* Ack intr. */
     ei_status.dmaing &= ~0x01;
-}
-
-static irqreturn_t apne_interrupt(int irq, void *dev_id)
-{
-    unsigned char pcmcia_intreq;
-
-    if (!(gayle.inten & GAYLE_IRQ_IRQ))
-        return IRQ_NONE;
-
-    pcmcia_intreq = pcmcia_get_intreq();
-
-    if (!(pcmcia_intreq & GAYLE_IRQ_IRQ)) {
-        pcmcia_ack_int(pcmcia_intreq);
-        return IRQ_NONE;
-    }
-    if (ei_debug > 3)
-        printk("pcmcia intreq = %x\n", pcmcia_intreq);
-    pcmcia_disable_irq();			/* to get rid of the sti() within ei_interrupt */
-    ei_interrupt(irq, dev_id);
-    pcmcia_ack_int(pcmcia_get_intreq());
-    pcmcia_enable_irq();
-    return IRQ_HANDLED;
 }
 
 #ifdef MODULE
@@ -560,11 +514,7 @@ static void __exit apne_module_exit(void)
 {
 	unregister_netdev(apne_dev);
 
-	pcmcia_disable_irq();
-
-	free_irq(IRQ_AMIGA_PORTS, apne_dev);
-
-	pcmcia_reset();
+	free_irq(IRQ_AMIGA_GAYLE_IRQ, apne_dev);
 
 	release_region(IOBASE, 0x20);
 
@@ -611,7 +561,7 @@ static int init_pcmcia(void)
 	}
 #endif
 
-	out_8(GAYLE_ATTRIBUTE+offset, config);
+	out_8(ZTWO_VADDR(GAYLE_ATTRIBUTE+offset), config);
 
 	return 1;
 }
