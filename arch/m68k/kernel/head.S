@@ -2863,11 +2863,11 @@ func_start	serial_init,%d0/%d1/%a0/%a1
 
 	is_not_amiga(1f)
 	lea	%pc@(L(custom)),%a0
-	movel	#-ZTWOBASE,%a0@
-	bclr	#SERIAL_DTR,SERIAL_CNTRL-ZTWOBASE
+	movel	#-(ZTWOBASE),%a0@
+	bclr	#SERIAL_DTR,SERIAL_CNTRL-(ZTWOBASE)
 	get_bi_record	BI_AMIGA_SERPER
-	movew	%a0@,CUSTOMBASE+C_SERPER-ZTWOBASE
-|	movew	#61,CUSTOMBASE+C_SERPER-ZTWOBASE
+	movew	%a0@,CUSTOMBASE+C_SERPER-(ZTWOBASE)
+|	movew	#61,CUSTOMBASE+C_SERPER-(ZTWOBASE)
 1:
 #endif
 #ifdef CONFIG_ATARI
