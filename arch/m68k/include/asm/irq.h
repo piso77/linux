@@ -4,7 +4,7 @@
 /*
  * This should be the same as the max(NUM_X_SOURCES) for all the
  * different m68k hosts compiled into the kernel.
- * Currently the Atari has 72 and the Amiga 24, but if both are
+ * Currently the Atari has 72 and the Amiga 27, but if both are
  * supported in the kernel it is better to make room for 72.
  */
 #if defined(CONFIG_COLDFIRE)
@@ -16,7 +16,7 @@
 #elif defined(CONFIG_Q40)
 #define NR_IRQS	43
 #elif defined(CONFIG_AMIGA) || !defined(CONFIG_MMU)
-#define NR_IRQS	32
+#define NR_IRQS	35
 #elif defined(CONFIG_APOLLO)
 #define NR_IRQS	24
 #elif defined(CONFIG_HP300)
