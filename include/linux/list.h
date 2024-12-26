@@ -8,6 +8,8 @@
 #include <linux/prefetch.h>
 #include <asm/system.h>
 
+#define smp_wmb() barrier()
+
 /*
  * Simple doubly linked list implementation.
  *
