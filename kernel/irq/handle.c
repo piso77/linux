@@ -131,8 +131,8 @@ irqreturn_t handle_IRQ_event(unsigned int irq, struct pt_regs *regs,
 
 	handle_dynamic_tick(action);
 
-	if (!(action->flags & IRQF_DISABLED))
-		local_irq_enable_in_hardirq();
+	if (!(action->flags & SA_INTERRUPT))
+		local_irq_enable();
 
 	do {
 		ret = action->handler(irq, action->dev_id, regs);
@@ -142,7 +142,7 @@ irqreturn_t handle_IRQ_event(unsigned int irq, struct pt_regs *regs,
 		action = action->next;
 	} while (action);
 
-	if (status & IRQF_SAMPLE_RANDOM)
+	if (status & SA_SAMPLE_RANDOM)
 		add_interrupt_randomness(irq);
 	local_irq_disable();
 
