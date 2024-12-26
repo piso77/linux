@@ -345,11 +345,11 @@ static int __devinit rtc_probe(struct platform_device *pdev)
 	spin_unlock_irq(&rtc_lock);
 
 	irq = ELAPSEDTIME_IRQ;
-	retval = request_irq(irq, elapsedtime_interrupt, IRQF_DISABLED,
+	retval = request_irq(irq, elapsedtime_interrupt, SA_INTERRUPT,
 	                     "elapsed_time", pdev);
 	if (retval == 0) {
 		irq = RTCLONG1_IRQ;
-		retval = request_irq(irq, rtclong1_interrupt, IRQF_DISABLED,
+		retval = request_irq(irq, rtclong1_interrupt, SA_INTERRUPT,
 		                     "rtclong1", pdev);
 	}
 

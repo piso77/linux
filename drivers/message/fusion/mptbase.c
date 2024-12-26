@@ -1695,7 +1695,7 @@ mpt_do_ioc_recovery(MPT_ADAPTER *ioc, u32 reason, int sleepFlag)
 				printk(MYIOC_s_INFO_FMT "PCI-MSI enabled\n",
 					ioc->name);
 			rc = request_irq(ioc->pcidev->irq, mpt_interrupt,
-					IRQF_SHARED, ioc->name, ioc);
+					SA_SHIRQ, ioc->name, ioc);
 			if (rc < 0) {
 				printk(MYIOC_s_ERR_FMT "Unable to allocate "
 					"interrupt %d!\n", ioc->name,
