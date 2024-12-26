@@ -1614,14 +1614,14 @@ static int __devinit isicom_register_isr(struct pci_dev *pdev,
 	const unsigned int index)
 {
 	struct isi_board *board = pci_get_drvdata(pdev);
-	unsigned long irqflags = IRQF_DISABLED;
+	unsigned long irqflags = SA_INTERRUPT;
 	int retval = -EINVAL;
 
 	if (!board->base)
 		goto end;
 
 	if (board->isa == NO)
-		irqflags |= IRQF_SHARED;
+		irqflags |= SA_SHIRQ;
 
 	retval = request_irq(board->irq, isicom_interrupt, irqflags,
 		ISICOM_NAME, board);
