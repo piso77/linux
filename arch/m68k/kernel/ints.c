@@ -44,15 +44,7 @@
 #endif
 
 /* table for system interrupt handlers */
-static struct irq_node *irq_list[SYS_IRQS];
-static struct irq_controller *irq_controller[SYS_IRQS];
-
-static struct irq_controller auto_irq_controller = {
-	.name		= "auto",
-	.lock		= SPIN_LOCK_UNLOCKED,
-	.startup	= m68k_irq_startup,
-	.shutdown	= m68k_irq_shutdown,
-};
+static irq_handler_t irq_list[SYS_IRQS];
 
 static const char *default_names[SYS_IRQS] = {
 	[0] = "spurious int",
@@ -108,12 +100,16 @@ void __init init_IRQ(void)
 		hardirq_mask_is_broken();
 	}
 
-	for (i = IRQ_AUTO_1; i <= IRQ_AUTO_7; i++) {
-		irq_controller[i] = &auto_irq_controller;
-		if (mach_default_handler && (*mach_default_handler)[i])
-			cpu_request_irq(i, (*mach_default_handler)[i],
-					0, default_names[i], NULL);
+	for (i = 0; i < SYS_IRQS; i++) {
+		if (mach_default_handler)
+			irq_list[i].handler = (*mach_default_handler)[i];
+		irq_list[i].flags   = 0;
+		irq_list[i].dev_id  = NULL;
+		irq_list[i].devname = default_names[i];
 	}
+
+	for (i = 0; i < NUM_IRQ_NODES; i++)
+		nodes[i].handler = NULL;
 
 	mach_init_IRQ ();
 }
@@ -123,12 +119,9 @@ irq_node_t *new_irq_node(void)
 	irq_node_t *node;
 	short i;
 
-	for (node = nodes, i = NUM_IRQ_NODES-1; i >= 0; node++, i--) {
-		if (!node->handler) {
-			memset(node, 0, sizeof(*node));
+	for (node = nodes, i = NUM_IRQ_NODES-1; i >= 0; node++, i--)
+		if (!node->handler)
 			return node;
-		}
-	}
 
 	printk ("new_irq_node: out of nodes\n");
 	return NULL;
@@ -155,114 +148,54 @@ void free_irq(unsigned int irq, void *dev_id)
 
 EXPORT_SYMBOL(free_irq);
 
-int setup_irq(unsigned int irq, struct irq_node *node)
-{
-	struct irq_controller *contr;
-	struct irq_node **prev;
-	unsigned long flags;
-
-	if (irq >= SYS_IRQS || !(contr = irq_controller[irq])) {
-		printk("%s: Incorrect IRQ %d from %s\n",
-		       __FUNCTION__, irq, node->devname);
-		return -ENXIO;
-	}
-
-	spin_lock_irqsave(&contr->lock, flags);
-
-	prev = irq_list + irq;
-	if (*prev) {
-		/* Can't share interrupts unless both agree to */
-		if (!((*prev)->flags & node->flags & SA_SHIRQ)) {
-			spin_unlock_irqrestore(&contr->lock, flags);
-			return -EBUSY;
-		}
-		while (*prev)
-			prev = &(*prev)->next;
-	}
-
-	if (!irq_list[irq]) {
-		if (contr->startup)
-			contr->startup(irq);
-		else
-			contr->enable(irq);
-	}
-	node->next = NULL;
-	*prev = node;
-
-	spin_unlock_irqrestore(&contr->lock, flags);
-
-	return 0;
-}
-
 int cpu_request_irq(unsigned int irq,
                     irqreturn_t (*handler)(int, void *, struct pt_regs *),
                     unsigned long flags, const char *devname, void *dev_id)
 {
-	struct irq_node *node;
-	int res;
+	if (irq < IRQ_AUTO_1 || irq > IRQ_AUTO_7) {
+		printk("%s: Incorrect IRQ %d from %s\n",
+		       __FUNCTION__, irq, devname);
+		return -ENXIO;
+	}
 
-	node = new_irq_node();
-	if (!node)
-		return -ENOMEM;
+#if 0
+	if (!(irq_list[irq].flags & IRQ_FLG_STD)) {
+		if (irq_list[irq].flags & IRQ_FLG_LOCK) {
+			printk("%s: IRQ %d from %s is not replaceable\n",
+			       __FUNCTION__, irq, irq_list[irq].devname);
+			return -EBUSY;
+		}
+		if (!(flags & IRQ_FLG_REPLACE)) {
+			printk("%s: %s can't replace IRQ %d from %s\n",
+			       __FUNCTION__, devname, irq, irq_list[irq].devname);
+			return -EBUSY;
+		}
+	}
+#endif
 
-	node->handler = handler;
-	node->flags   = flags;
-	node->dev_id  = dev_id;
-	node->devname = devname;
-
-	res = setup_irq(irq, node);
-	if (res)
-		node->handler = NULL;
-
-	return res;
+	irq_list[irq].handler = handler;
+	irq_list[irq].flags   = flags;
+	irq_list[irq].dev_id  = dev_id;
+	irq_list[irq].devname = devname;
+	return 0;
 }
 
 void cpu_free_irq(unsigned int irq, void *dev_id)
 {
-	struct irq_controller *contr;
-	struct irq_node **p, *node;
-	unsigned long flags;
-
-	if (irq >= SYS_IRQS || !(contr = irq_controller[irq])) {
+	if (irq < IRQ_AUTO_1 || irq > IRQ_AUTO_7) {
 		printk("%s: Incorrect IRQ %d\n", __FUNCTION__, irq);
 		return;
 	}
 
-	spin_lock_irqsave(&contr->lock, flags);
+	if (irq_list[irq].dev_id != dev_id)
+		printk("%s: Removing probably wrong IRQ %d from %s\n",
+		       __FUNCTION__, irq, irq_list[irq].devname);
 
-	p = irq_list + irq;
-	while ((node = *p)) {
-		if (node->dev_id == dev_id)
-			break;
-		p = &node->next;
-	}
-
-	if (node) {
-		*p = node->next;
-		node->handler = NULL;
-	} else
-		printk("%s: Removing probably wrong IRQ %d\n",
-		       __FUNCTION__, irq);
-
-	if (!irq_list[irq])
-		contr->shutdown(irq);
-
-	spin_unlock_irqrestore(&contr->lock, flags);
+	irq_list[irq].handler = (*mach_default_handler)[irq];
+	irq_list[irq].flags   = 0;
+	irq_list[irq].dev_id  = NULL;
+	irq_list[irq].devname = default_names[irq];
 }
-
-int m68k_irq_startup(unsigned int irq)
-{
-	if (irq <= IRQ_AUTO_7)
-		vectors[VEC_SPUR + irq] = auto_inthandler;
-	return 0;
-}
-
-void m68k_irq_shutdown(unsigned int irq)
-{
-	if (irq <= IRQ_AUTO_7)
-		vectors[VEC_SPUR + irq] = bad_inthandler;
-}
-
 
 /*
  * Do we need these probe functions on the m68k?
@@ -316,14 +249,8 @@ static void dummy_free_irq(unsigned int irq, void *dev_id)
 
 asmlinkage void m68k_handle_int(unsigned int irq, struct pt_regs *regs)
 {
-	struct irq_node *node;
-
 	kstat_cpu(0).irqs[irq]++;
-	node = irq_list[irq];
-	do {
-		node->handler(irq, node->dev_id, regs);
-		node = node->next;
-	} while (node);
+	irq_list[irq].handler(irq, irq_list[irq].dev_id, regs);
 }
 
 asmlinkage void handle_badint(struct pt_regs *regs)
@@ -334,18 +261,16 @@ asmlinkage void handle_badint(struct pt_regs *regs)
 
 int show_interrupts(struct seq_file *p, void *v)
 {
-	struct irq_controller *contr;
-	struct irq_node *node;
 	int i = *(loff_t *) v;
 
 	/* autovector interrupts */
-	if (i < SYS_IRQS && irq_list[i]) {
-		contr = irq_controller[i];
-		node = irq_list[i];
-		seq_printf(p, "%s %u: %10u %s", contr->name, i, kstat_cpu(0).irqs[i], node->devname);
-		while ((node = node->next))
-			seq_printf(p, ", %s", node->devname);
-		seq_puts(p, "\n");
+	if (i < SYS_IRQS) {
+		if (mach_default_handler) {
+			seq_printf(p, "auto %2d: %10u ", i,
+			               i ? kstat_cpu(0).irqs[i] : num_spurious);
+			seq_puts(p, "  ");
+			seq_printf(p, "%s\n", irq_list[i].devname);
+		}
 	} else if (i == SYS_IRQS)
 		mach_get_irq_list(p, v);
 	return 0;
