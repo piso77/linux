@@ -165,7 +165,7 @@ int voyagergx_irq_demux(int irq)
 static struct irqaction irq0  = {
 	.name		= "voyagergx",
 	.handler	= voyagergx_interrupt,
-	.flags		= IRQF_DISABLED,
+	.flags		= SA_INTERRUPT,
 	.mask		= CPU_MASK_NONE,
 };
 
