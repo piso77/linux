@@ -44,7 +44,7 @@
 #include <asm/asm-offsets.h>
 
 .globl system_call, buserr, trap, resume
-.globl sys_call_table
+.globl inthandler, sys_call_table
 .globl sys_fork, sys_clone, sys_vfork
 .globl ret_from_interrupt, bad_interrupt
 
@@ -190,15 +190,44 @@ do_delayed_trace:
 	jbra	resume_userspace
 
 
-/* This is the main interrupt handler for autovector interrupts */
+#if 0
+#ifdef CONFIG_AMIGA
+ami_inthandler:
+	addql	#1,irq_stat+CPUSTAT_LOCAL_IRQ_COUNT
+	SAVE_ALL_INT
+	GET_CURRENT(%d0)
 
-ENTRY(auto_inthandler)
+	bfextu	%sp@(PT_VECTOR){#4,#12},%d0
+	movel	%d0,%a0
+	addql	#1,%a0@(kstat+STAT_IRQ-VECOFF(VEC_SPUR))
+	movel	%a0@(autoirq_list-VECOFF(VEC_SPUR)),%a0
+
+| amiga vector int handler get the req mask instead of irq vector
+	lea	CUSTOMBASE,%a1
+	movew	%a1@(C_INTREQR),%d0
+	andw	%a1@(C_INTENAR),%d0
+
+| prepare stack (push frame pointer, dev_id & req mask)
+	pea	%sp@
+	movel	%a0@(IRQ_DEVID),%sp@-
+	movel	%d0,%sp@-
+	pea	%pc@(ret_from_interrupt:w)
+	jbra	@(IRQ_HANDLER,%a0)@(0)
+
+ENTRY(nmi_handler)
+	rte
+#endif
+#endif
+
+/*
+** This is the main interrupt handler, responsible for calling process_int()
+*/
+inthandler:
 	SAVE_ALL_INT
 	GET_CURRENT(%d0)
 	addqb	#1,%curptr@(TASK_INFO+TINFO_PREEMPT+1)
 					|  put exception # in d0
-	bfextu	%sp@(PT_VECTOR){#4,#10},%d0
-	subw	#VEC_SPUR,%d0
+	bfextu %sp@(PT_VECTOR){#4,#10},%d0
 
 	movel	%sp,%sp@-
 	movel	%d0,%sp@-		|  put vector # on stack
@@ -211,16 +240,15 @@ ENTRY(auto_inthandler)
 	jbra	3f
 1:
 #endif
-	jsr	m68k_handle_int		|  process the IRQ
+	jbsr	process_int		|  process the IRQ
 3:	addql	#8,%sp			|  pop parameters off stack
 
 ret_from_interrupt:
 	subqb	#1,%curptr@(TASK_INFO+TINFO_PREEMPT+1)
-	jeq	ret_from_last_interrupt
-2:	RESTORE_ALL
-
-	ALIGN
-ret_from_last_interrupt:
+	jeq	1f
+2:
+	RESTORE_ALL
+1:
 	moveq	#(~ALLOWINT>>8)&0xff,%d0
 	andb	%sp@(PT_SR),%d0
 	jne	2b
@@ -231,40 +259,12 @@ ret_from_last_interrupt:
 	pea	ret_from_exception
 	jra	do_softirq
 
-/* Handler for user defined interrupt vectors */
-
-ENTRY(mach_inthandler)
-	SAVE_ALL_INT
-	GET_CURRENT(%d0)
-	addqb	#1,%curptr@(TASK_INFO+TINFO_PREEMPT+1)
-					|  put exception # in d0
-	bfextu	%sp@(PT_VECTOR){#4,#10},%d0
-
-	movel	%sp,%sp@-
-	movel	%d0,%sp@-		|  put vector # on stack
-	movel	mach_process_int,%a0
-	jsr	%a0@			|  process the IRQ
-	addql	#8,%sp			|  pop parameters off stack
-
-	subqb	#1,%curptr@(TASK_INFO+TINFO_PREEMPT+1)
-	jeq	ret_from_last_interrupt
-	RESTORE_ALL
 
 /* Handler for uninitialized and spurious interrupts */
 
-ENTRY(bad_inthandler)
-	SAVE_ALL_INT
-	GET_CURRENT(%d0)
-	addqb	#1,%curptr@(TASK_INFO+TINFO_PREEMPT+1)
-
-	movel	%sp,%sp@-
-	jsr	handle_badint
-	addql	#4,%sp
-
-	subqb	#1,%curptr@(TASK_INFO+TINFO_PREEMPT+1)
-	jeq	ret_from_last_interrupt
-	RESTORE_ALL
-
+bad_interrupt:
+	addql	#1,num_spurious
+	rte
 
 ENTRY(sys_fork)
 	SAVE_SWITCH_STACK

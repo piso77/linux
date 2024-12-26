@@ -247,16 +247,19 @@ static void dummy_free_irq(unsigned int irq, void *dev_id)
 	printk("calling uninitialized disable_irq()\n");
 }
 
-asmlinkage void m68k_handle_int(unsigned int irq, struct pt_regs *regs)
+asmlinkage void process_int(unsigned long vec, struct pt_regs *fp)
 {
-	kstat_cpu(0).irqs[irq]++;
-	irq_list[irq].handler(irq, irq_list[irq].dev_id, regs);
-}
-
-asmlinkage void handle_badint(struct pt_regs *regs)
-{
-	kstat_cpu(0).irqs[0]++;
-	printk("unexpected interrupt from %u\n", regs->vector);
+	if (vec >= VEC_INT1 && vec <= VEC_INT7 && !MACH_IS_BVME6000) {
+		vec -= VEC_SPUR;
+		kstat_cpu(0).irqs[vec]++;
+		irq_list[vec].handler(vec, irq_list[vec].dev_id, fp);
+	} else {
+		if (mach_process_int)
+			mach_process_int(vec, fp);
+		else
+			panic("Can't process interrupt vector %ld\n", vec);
+		return;
+	}
 }
 
 int show_interrupts(struct seq_file *p, void *v)
