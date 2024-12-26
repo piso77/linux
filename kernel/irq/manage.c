@@ -234,7 +234,7 @@ int setup_irq(unsigned int irq, struct irqaction *new)
 		    ((old->flags ^ new->flags) & SA_TRIGGER_MASK))
 			goto mismatch;
 
-#if defined(CONFIG_IRQ_PER_CPU)
+#if defined(CONFIG_IRQ_PER_CPU) && defined(IRQF_PERCPU)
 		/* All handlers must agree on per-cpuness */
 		if ((old->flags & SA_PERCPU_IRQ) !=
 		    (new->flags & SA_PERCPU_IRQ))
