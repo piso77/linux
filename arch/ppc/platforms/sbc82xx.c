@@ -145,7 +145,7 @@ static irqreturn_t sbc82xx_i8259_demux(int irq, void *dev_id, struct pt_regs *re
 
 static struct irqaction sbc82xx_i8259_irqaction = {
 	.handler = sbc82xx_i8259_demux,
-	.flags = IRQF_DISABLED,
+	.flags = SA_INTERRUPT,
 	.mask = CPU_MASK_NONE,
 	.name = "i8259 demux",
 };
