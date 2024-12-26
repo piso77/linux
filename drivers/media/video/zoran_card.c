@@ -1380,7 +1380,7 @@ find_zr36057 (void)
 
 		result = request_irq(zr->pci_dev->irq,
 				     zoran_irq,
-				     IRQF_SHARED | IRQF_DISABLED,
+				     SA_SHIRQ | SA_INTERRUPT,
 				     ZR_DEVNAME(zr),
 				     (void *) zr);
 		if (result < 0) {
