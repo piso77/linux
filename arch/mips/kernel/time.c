@@ -579,7 +579,7 @@ unsigned int mips_hpt_frequency;
 
 static struct irqaction timer_irqaction = {
 	.handler = timer_interrupt,
-	.flags = IRQF_DISABLED,
+	.flags = SA_INTERRUPT,
 	.name = "timer",
 };
 
