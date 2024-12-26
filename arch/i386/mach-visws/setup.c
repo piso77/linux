@@ -115,7 +115,7 @@ void __init pre_setup_arch_hook()
 
 static struct irqaction irq0 = {
 	.handler =	timer_interrupt,
-	.flags =	IRQF_DISABLED,
+	.flags =	SA_INTERRUPT,
 	.name =		"timer",
 };
 
