@@ -94,12 +94,12 @@ show_interrupts(struct seq_file *p, void *v)
 #endif
 		seq_printf(p, " %14s", irq_desc[irq].chip->typename);
 		seq_printf(p, "  %c%s",
-			(action->flags & IRQF_DISABLED)?'+':' ',
+			(action->flags & SA_INTERRUPT)?'+':' ',
 			action->name);
 
 		for (action=action->next; action; action = action->next) {
 			seq_printf(p, ", %c%s",
-				  (action->flags & IRQF_DISABLED)?'+':' ',
+				  (action->flags & SA_INTERRUPT)?'+':' ',
 				   action->name);
 		}
 
