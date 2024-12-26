@@ -2237,7 +2237,7 @@ static int __devinit snd_korg1212_create(struct snd_card *card, struct pci_dev *
         }
 
         err = request_irq(pci->irq, snd_korg1212_interrupt,
-                          IRQF_DISABLED|IRQF_SHARED,
+                          SA_INTERRUPT|SA_SHIRQ,
                           "korg1212", korg1212);
 
         if (err) {

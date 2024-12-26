@@ -973,7 +973,7 @@ static int __init snd_amd7930_create(struct snd_card *card,
 	amd7930_idle(amd);
 
 	if (request_irq(irq, snd_amd7930_interrupt,
-			IRQF_DISABLED | IRQF_SHARED, "amd7930", amd)) {
+			SA_INTERRUPT | SA_SHIRQ, "amd7930", amd)) {
 		snd_printk("amd7930-%d: Unable to grab IRQ %d\n",
 			   dev, irq);
 		snd_amd7930_free(amd);

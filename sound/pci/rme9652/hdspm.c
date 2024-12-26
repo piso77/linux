@@ -3497,7 +3497,7 @@ static int __devinit snd_hdspm_create(struct snd_card *card, struct hdspm * hdsp
 		   hdspm->port + io_extent - 1);
 
 	if (request_irq(pci->irq, snd_hdspm_interrupt,
-			IRQF_DISABLED | IRQF_SHARED, "hdspm",
+			SA_INTERRUPT | SA_SHIRQ, "hdspm",
 			(void *) hdspm)) {
 		snd_printk(KERN_ERR "HDSPM: unable to use IRQ %d\n", pci->irq);
 		return -EBUSY;
