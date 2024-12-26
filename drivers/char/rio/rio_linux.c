@@ -1119,7 +1119,7 @@ static int __init rio_init(void)
 	for (i = 0; i < p->RIONumHosts; i++) {
 		hp = &p->RIOHosts[i];
 		if (hp->Ivec) {
-			int mode = IRQF_SHARED;
+			int mode = SA_SHIRQ;
 			if (hp->Ivec & 0x8000) {
 				mode = 0;
 				hp->Ivec &= 0x7fff;
