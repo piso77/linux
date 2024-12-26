@@ -1004,7 +1004,7 @@ static int ide_init_queue(ide_drive_t *drive)
  * and irq serialization situations.  This is somewhat complex because
  * it handles static as well as dynamic (PCMCIA) IDE interfaces.
  *
- * The IRQF_DISABLED in sa_flags means ide_intr() is always entered with
+ * The SA_INTERRUPT in sa_flags means ide_intr() is always entered with
  * interrupts completely disabled.  This can be bad for interrupt latency,
  * but anything else has led to problems on some machines.  We re-enable
  * interrupts as much as we can safely do in most places.
@@ -1090,15 +1090,15 @@ static int init_irq (ide_hwif_t *hwif)
 	 * Allocate the irq, if not already obtained for another hwif
 	 */
 	if (!match || match->irq != hwif->irq) {
-		int sa = IRQF_DISABLED;
+		int sa = SA_INTERRUPT;
 #if defined(__mc68000__) || defined(CONFIG_APUS)
-		sa = IRQF_SHARED;
+		sa = SA_SHIRQ;
 #endif /* __mc68000__ || CONFIG_APUS */
 
 		if (IDE_CHIPSET_IS_PCI(hwif->chipset)) {
-			sa = IRQF_SHARED;
+			sa = SA_SHIRQ;
 #ifndef CONFIG_IDEPCI_SHARE_IRQ
-			sa |= IRQF_DISABLED;
+			sa |= SA_INTERRUPT;
 #endif /* CONFIG_IDEPCI_SHARE_IRQ */
 		}
 
