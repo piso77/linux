@@ -1029,7 +1029,7 @@ gt96100_open(struct net_device *dev)
 	}
 
 	if ((retval = request_irq(dev->irq, &gt96100_interrupt,
-				  IRQF_SHARED, dev->name, dev))) {
+				  SA_SHIRQ, dev->name, dev))) {
 		err("unable to get IRQ %d\n", dev->irq);
 		return retval;
 	}

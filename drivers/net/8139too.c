@@ -1312,7 +1312,7 @@ static int rtl8139_open (struct net_device *dev)
 	int retval;
 	void __iomem *ioaddr = tp->mmio_addr;
 
-	retval = request_irq (dev->irq, rtl8139_interrupt, IRQF_SHARED, dev->name, dev);
+	retval = request_irq (dev->irq, rtl8139_interrupt, SA_SHIRQ, dev->name, dev);
 	if (retval)
 		return retval;
 

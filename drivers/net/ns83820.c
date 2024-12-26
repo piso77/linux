@@ -1884,7 +1884,7 @@ static int __devinit ns83820_init_one(struct pci_dev *pci_dev, const struct pci_
 
 	dev->IMR_cache = 0;
 
-	err = request_irq(pci_dev->irq, ns83820_irq, IRQF_SHARED,
+	err = request_irq(pci_dev->irq, ns83820_irq, SA_SHIRQ,
 			  DRV_NAME, ndev);
 	if (err) {
 		dev_info(&pci_dev->dev, "unable to register irq %d, err %d\n",

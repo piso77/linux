@@ -2415,7 +2415,7 @@ static int myri10ge_resume(struct pci_dev *pdev)
 	pci_enable_device(pdev);
 	pci_set_master(pdev);
 
-	status = request_irq(pdev->irq, myri10ge_intr, IRQF_SHARED,
+	status = request_irq(pdev->irq, myri10ge_intr, SA_SHIRQ,
 			     netdev->name, mgp);
 	if (status != 0) {
 		dev_err(&pdev->dev, "failed to allocate IRQ\n");
@@ -2696,7 +2696,7 @@ static int myri10ge_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 			mgp->msi_enabled = 1;
 	}
 
-	status = request_irq(pdev->irq, myri10ge_intr, IRQF_SHARED,
+	status = request_irq(pdev->irq, myri10ge_intr, SA_SHIRQ,
 			     netdev->name, mgp);
 	if (status != 0) {
 		dev_err(&pdev->dev, "failed to allocate IRQ\n");
