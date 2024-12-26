@@ -81,7 +81,7 @@ irqreturn_t baboon_irq(int irq, void *dev_id, struct pt_regs *regs)
 	for (i = 0, irq_bit = 1 ; i < 3 ; i++, irq_bit <<= 1) {
 	        if (events & irq_bit/* & baboon_active*/) {
 			baboon_active &= ~irq_bit;
-			m68k_handle_int(IRQ_BABOON_0 + i, regs);
+			mac_do_irq_list(IRQ_BABOON_0 + i, regs);
 			baboon_active |= irq_bit;
 			baboon->mb_ifr &= ~irq_bit;
 		}
