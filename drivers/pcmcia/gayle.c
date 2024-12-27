@@ -315,7 +315,6 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev, struct pt_regs *re
 static struct pccard_operations gayle_pcmcia_operations = {
 	.init		= gayle_pcmcia_init,
 	.get_status	= gayle_pcmcia_get_status,
-	.get_socket	= gayle_pcmcia_get_socket,
 	.set_socket	= gayle_pcmcia_set_socket,
 	.set_io_map	= gayle_pcmcia_set_io_map,
 	.set_mem_map	= gayle_pcmcia_set_mem_map,
