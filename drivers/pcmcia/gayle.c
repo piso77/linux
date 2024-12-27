@@ -320,20 +320,14 @@ static struct pccard_operations gayle_pcmcia_operations = {
 	.set_mem_map	= gayle_pcmcia_set_mem_map,
 };
 
-static int gayle_pcmcia_drv_suspend(struct device *dev, pm_message_t state, u32 level)
+static int gayle_pcmcia_drv_suspend(struct device *dev, pm_message_t state)
 {
-	int ret = 0;
-	if (level == SUSPEND_SAVE_STATE)
-		ret = pcmcia_socket_dev_suspend(dev, state);
-	return ret;
+	return pcmcia_socket_dev_suspend(dev, state);
 }
 
-static int gayle_pcmcia_drv_resume(struct device *dev, u32 level)
+static int gayle_pcmcia_drv_resume(struct device *dev)
 {
-	int ret = 0;
-	if (level == RESUME_RESTORE_STATE)
-		ret = pcmcia_socket_dev_resume(dev);
-	return ret;
+	return pcmcia_socket_dev_resume(dev);
 }
 
 static struct device_driver gayle_pcmcia_driver = {
