@@ -10,6 +10,7 @@
 #include <linux/interrupt.h>
 #include <linux/delay.h>
 #include <linux/err.h>
+#include <linux/platform_device.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 
