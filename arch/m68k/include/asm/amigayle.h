@@ -59,14 +59,6 @@ struct GAYLE {
 
 #define gayle_attribute ((volatile u_char *)(GAYLE_ATTRIBUTE))
 
-#if 0
-#define gayle_inb(a) readb( GAYLE_IO+(a)+(((a)&1)*GAYLE_ODD) )
-#define gayle_outb(v,a) writeb( v, GAYLE_IO+(a)+(((a)&1)*GAYLE_ODD) )
-
-#define gayle_inw(a) readw( GAYLE_IO+(a) )
-#define gayle_outw(v,a) writew( v, GAYLE_IO+(a) )
-#endif
-
 /* GAYLE_CARDSTATUS bit def */
 
 #define GAYLE_CS_CCDET		0x40	/* credit card detect */
@@ -77,6 +69,8 @@ struct GAYLE {
 #define GAYLE_CS_WR		0x08	/* write enable (1 == enabled) */
 #define GAYLE_CS_BSY		0x04	/* credit card busy */
 #define GAYLE_CS_IRQ		0x04	/* interrupt request */
+#define GAYLE_CS_DAEN		0x02	/* enable digital audio */
+#define GAYLE_CS_DISABLE	0x01	/* disable PCMCIA slot */
 
 /* GAYLE_IRQ bit def */
 
@@ -89,11 +83,16 @@ struct GAYLE {
 #define GAYLE_IRQ_WR		0x08
 #define GAYLE_IRQ_BSY		0x04
 #define GAYLE_IRQ_IRQ		0x04
-#define GAYLE_IRQ_IDEACK1	0x02
-#define GAYLE_IRQ_IDEACK0	0x01
+#define GAYLE_IRQ_RESET		0x02	/* reset machine after CCDET change */
+#define GAYLE_IRQ_BVDLEVEL	0x02	/* 1 = generate level 6 int, 0 = level 2 */
+#define GAYLE_IRQ_BERR		0x01	/* generate bus error after CCDET change */
+#define GAYLE_IRQ_IRQLEVEL	0x01	/* 1 = generate level 6 int, 0 = level 2 */
 
 /* GAYLE_CONFIG bit def
    (bit 0-1 for program voltage, bit 2-3 for access speed */
+
+#define GAYLE_VPP_MASK		0x03
+#define GAYLE_SPEED_MASK	0x0c
 
 #define GAYLE_CFG_0V		0x00
 #define GAYLE_CFG_5V		0x01

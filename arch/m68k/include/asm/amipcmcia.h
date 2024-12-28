@@ -14,6 +14,7 @@
 #define __AMIGA_PCMCIA_H__
 
 #include <asm/amigayle.h>
+#include <pcmcia/ss.h>
 
 /* prototypes */
 
@@ -23,6 +24,9 @@ void pcmcia_program_voltage(int voltage);
 void pcmcia_access_speed(int speed);
 void pcmcia_write_enable(void);
 void pcmcia_write_disable(void);
+void gayle_set_io_win(int win, unsigned char flags, unsigned int start, unsigned
+		      int stop);
+unsigned long gayle_get_byte_base(unsigned long port);
 
 static inline u_char pcmcia_read_status(void)
 {
