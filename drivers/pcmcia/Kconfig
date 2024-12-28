@@ -230,7 +230,16 @@ config PCMCIA_DEBUG
 
 config PCMCIA_PROBE
 	bool
-	default y if ISA && !ARCH_SA1100 && !PARISC
+	default y if ISA && !ARCH_SA1100 && !PARISC && !AMIGA
+
+config PCMCIA_GAYLE
+	tristate "Gayle support"
+	depends on AMIGA && PCMCIA && EXPERIMENTAL
+	select AMIGA_PCMCIA
+	select PCCARD_SEMISTATIC
+	help
+	  Say Y here to include support for the PCMCIA socket
+	  found on the A600 and A1200.
 
 config OMAP_CF
 	tristate "OMAP CompactFlash Controller"
@@ -252,5 +261,8 @@ config PCCARD_NONSTATIC
 
 config PCCARD_IODYN
 	bool
+
+config PCCARD_SEMISTATIC
+	tristate
 
 endif	# PCCARD
