@@ -14,23 +14,49 @@
 
 #include <linux/types.h>
 #include <linux/jiffies.h>
+#include <linux/delay.h>
 #include <linux/timer.h>
-#include <linux/module.h>
-
+#include <pcmcia/ss.h>
+#include <asm/amigahw.h>
 #include <asm/amigayle.h>
 #include <asm/amipcmcia.h>
 
+struct gayle_io_map {
+	ioaddr_t      start;
+	ioaddr_t      stop;
+	unsigned char flags;
+};
+
 /* gayle config byte for program voltage and access speed */
 static unsigned char cfg_byte = GAYLE_CFG_0V|GAYLE_CFG_150NS;
+/* PCMCIA I/O maps */
+static struct gayle_io_map gayle_io_maps[MAX_IO_WIN];
 
 void pcmcia_reset(void)
 {
+	unsigned long flags;
 	unsigned long reset_start_time = jiffies;
 	unsigned char b;
 
-	gayle_reset = 0x00;
-	while (time_before(jiffies, reset_start_time + 1*HZ/100));
-	b = gayle_reset;
+	if (amiga_model == AMI_600) {
+		gayle_reset = 0x00;
+		while (time_before(jiffies, reset_start_time + 1*HZ/100));
+		b = gayle_reset;
+	} else {
+		/* The (official) A600 way to reset the card doesn't work on the A1200 */
+		local_irq_save(flags);
+		/* We need to be careful not to trigger any interrupts */
+		b = gayle.inten;
+		gayle.inten = 0;
+		gayle.intreq = 0xff;
+		udelay(10);
+		gayle.intreq = 0xfc;
+		/* Allow status lines to settle */
+		udelay(20);
+		gayle.intreq = (0xfc & ~(GAYLE_IRQ_CCDET|GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
+		gayle.inten = b;
+		local_irq_restore(flags);
+	}
 }
 EXPORT_SYMBOL(pcmcia_reset);
 
@@ -120,3 +146,41 @@ void pcmcia_write_disable(void)
 }
 EXPORT_SYMBOL(pcmcia_write_disable);
 
+void gayle_set_io_win(int win, unsigned char flags, ioaddr_t start, ioaddr_t stop)
+{
+	struct gayle_io_map *map = &gayle_io_maps[win];
+
+	map->flags = flags;
+	map->start = start;
+	map->stop = stop;
+}
+
+unsigned long gayle_get_byte_base(unsigned long port)
+{
+	struct gayle_io_map *map;
+	int i;
+
+	/* Simple case first */
+	if (!(port & 1)) {
+		return (ZTWO_VADDR(GAYLE_IO) + port);
+	}
+
+	for (i = 0, map = gayle_io_maps; i < MAX_IO_WIN; i++, map++) {
+		if ((map->flags & MAP_ACTIVE) &&
+		    (port >= map->start) && (port <= map->stop)) {
+			if (map->flags & MAP_16BIT) {
+				return (ZTWO_VADDR(GAYLE_IO) + port);
+			} else {
+				/* Assume MAP_AUTOSZ works this way */
+				return ((ZTWO_VADDR(GAYLE_IO) + port) + ((port & 1) * GAYLE_ODD));
+			}
+		}
+	}
+
+	/* I'd like to make this case break, but I can't since sometimes an I/O access
+	   is done after a card has been removed. */
+	return (ZTWO_VADDR(GAYLE_IO) + port);
+}
+
+EXPORT_SYMBOL(gayle_set_io_win);
+EXPORT_SYMBOL(gayle_get_byte_base);
