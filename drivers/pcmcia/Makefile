@@ -15,6 +15,7 @@ obj-$(CONFIG_PCMCIA)				+= pcmcia.o
 pcmcia_rsrc-y					+= rsrc_mgr.o
 pcmcia_rsrc-$(CONFIG_PCCARD_NONSTATIC)		+= rsrc_nonstatic.o
 pcmcia_rsrc-$(CONFIG_PCCARD_IODYN)		+= rsrc_iodyn.o
+pcmcia_rsrc-$(CONFIG_PCCARD_SEMISTATIC)		+= rsrc_semistatic.o
 obj-$(CONFIG_PCCARD)				+= pcmcia_rsrc.o
 
 
@@ -35,6 +36,7 @@ obj-$(CONFIG_OMAP_CF)				+= omap_cf.o
 obj-$(CONFIG_ELECTRA_CF)			+= electra_cf.o
 obj-$(CONFIG_PCMCIA_ALCHEMY_DEVBOARD)		+= db1xxx_ss.o
 obj-$(CONFIG_PCMCIA_MAX1600)			+= max1600.o
+obj-$(CONFIG_PCMCIA_GAYLE)			+= gayle.o
 
 sa1111_cs-y					+= sa1111_generic.o
 sa1111_cs-$(CONFIG_ASSABET_NEPONSET)		+= sa1111_neponset.o
