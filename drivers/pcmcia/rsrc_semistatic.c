@@ -1,0 +1,145 @@
+/*
+ * rsrc_semistatic.c -- Resource management routines for SS_CAP_STATIC_MAP
+ *			sockets with io_offset == 0
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * The initial developer of the original code is David A. Hinds
+ * <dahinds@users.sourceforge.net>.  Portions created by David A. Hinds
+ * are Copyright (C) 1999 David A. Hinds.  All Rights Reserved.
+ *
+ * (C) 1999		David A. Hinds
+ */
+
+#include <linux/config.h>
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/pci.h>
+
+#include <pcmcia/ss.h>
+
+MODULE_AUTHOR("David A. Hinds, Dominik Brodowski");
+MODULE_LICENSE("GPL");
+
+/*
+ * Linux resource management extensions
+ */
+static struct resource *
+make_resource(unsigned long b, unsigned long n, int flags, char *name)
+{
+	struct resource *res = kmalloc(sizeof(*res), GFP_KERNEL);
+
+	if (res) {
+		memset(res, 0, sizeof(*res));
+		res->name = name;
+		res->start = b;
+		res->end = b + n - 1;
+		res->flags = flags;
+	}
+	return res;
+}
+
+struct pcmcia_align_data {
+	unsigned long	mask;
+	unsigned long	offset;
+};
+
+static void
+pcmcia_align(void *align_data, struct resource *res,
+	     unsigned long size, unsigned long align)
+{
+	struct pcmcia_align_data *data = align_data;
+	unsigned long start;
+
+	start = (res->start & ~data->mask) + data->offset;
+	if (start < res->start)
+		start += data->mask + 1;
+	res->start = start;
+
+#ifdef CONFIG_X86
+        if (res->flags & IORESOURCE_IO) {
+                if (start & 0x300) {
+                        start = (start + 0x3ff) & ~0x3ff;
+                        res->start = start;
+                }
+        }
+#endif
+
+#ifdef CONFIG_M68K
+        if (res->flags & IORESOURCE_IO) {
+		if ((res->start + size - 1) >= 1024)
+			res->start = res->end;
+	}
+#endif
+}
+
+/*======================================================================
+
+    These find ranges of I/O ports or memory addresses that are not
+    currently allocated by other devices.
+
+    The 'align' field should reflect the number of bits of address
+    that need to be preserved from the initial value of *base.  It
+    should be a power of two, greater than or equal to 'num'.  A value
+    of 0 means that all bits of *base are significant.  *base should
+    also be strictly less than 'align'.
+
+======================================================================*/
+
+static struct resource *semistatic_find_io_region(unsigned long base, int num,
+		   unsigned long align, struct pcmcia_socket *s)
+{
+	struct resource *res = make_resource(0, num, IORESOURCE_IO,
+					     s->dev.class_id);
+	struct pcmcia_align_data data;
+	unsigned long min = base;
+	int ret;
+
+	if (align == 0)
+		align = 0x10000;
+
+	data.mask = align - 1;
+	data.offset = base & data.mask;
+
+#ifdef CONFIG_PCI
+	if (s->cb_dev) {
+		ret = pci_bus_alloc_resource(s->cb_dev->bus, res, num, 1,
+					     min, 0, pcmcia_align, &data);
+	} else
+#endif
+		ret = allocate_resource(&ioport_resource, res, num, min, ~0UL,
+					1, pcmcia_align, &data);
+
+	if (ret != 0) {
+		kfree(res);
+		res = NULL;
+	}
+	return res;
+}
+
+static int semistatic_init(struct pcmcia_socket *s)
+{
+	unsigned long flags;
+
+	/* the good thing about SS_CAP_STATIC_MAP sockets is
+	 * that they don't need a resource database */
+
+	spin_lock_irqsave(&s->lock, flags);
+	s->resource_setup_done = 1;
+	spin_unlock_irqrestore(&s->lock, flags);
+
+	return 0;
+}
+
+struct pccard_resource_ops pccard_semistatic_ops = {
+	.validate_mem = NULL,
+	.adjust_io_region = NULL,
+	.find_io = semistatic_find_io_region,
+	.find_mem = NULL,
+	.adjust_resource = NULL,
+	.init = semistatic_init,
+	.exit = NULL,
+};
+EXPORT_SYMBOL(pccard_semistatic_ops);
