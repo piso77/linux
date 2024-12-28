@@ -242,6 +242,7 @@ extern struct pccard_resource_ops pccard_static_ops;
 #if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
 extern struct pccard_resource_ops pccard_iodyn_ops;
 extern struct pccard_resource_ops pccard_nonstatic_ops;
+extern struct pccard_resource_ops pccard_semistatic_ops;
 #else
 /* If PCMCIA is not used, but only CARDBUS, these functions are not used
  * at all. Therefore, do not use the large (240K!) rsrc_nonstatic module
