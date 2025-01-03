@@ -22,8 +22,8 @@
 #include <asm/amipcmcia.h>
 
 struct gayle_io_map {
-	ioaddr_t      start;
-	ioaddr_t      stop;
+	unsigned int  start;
+	unsigned int  stop;
 	unsigned char flags;
 };
 
@@ -146,7 +146,7 @@ void pcmcia_write_disable(void)
 }
 EXPORT_SYMBOL(pcmcia_write_disable);
 
-void gayle_set_io_win(int win, unsigned char flags, ioaddr_t start, ioaddr_t stop)
+void gayle_set_io_win(int win, unsigned char flags, unsigned int start, unsigned int stop)
 {
 	struct gayle_io_map *map = &gayle_io_maps[win];
 

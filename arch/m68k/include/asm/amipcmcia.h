@@ -24,7 +24,8 @@ void pcmcia_program_voltage(int voltage);
 void pcmcia_access_speed(int speed);
 void pcmcia_write_enable(void);
 void pcmcia_write_disable(void);
-void gayle_set_io_win(int win, unsigned char flags, ioaddr_t start, ioaddr_t stop);
+void gayle_set_io_win(int win, unsigned char flags, unsigned int start, unsigned
+		      int stop);
 
 static inline u_char pcmcia_read_status(void)
 {
