@@ -227,6 +227,8 @@ static void __init amiga_identify(void)
 		break;
 
 	case AMI_600:
+		AMIGAHW_SET(A600_PCMCIA);
+		fallthrough;
 	case AMI_1200:
 		AMIGAHW_SET(A1200_IDE);
 		AMIGAHW_SET(PCMCIA);

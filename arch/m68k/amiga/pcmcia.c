@@ -38,7 +38,7 @@ void pcmcia_reset(void)
 	unsigned long reset_start_time = jiffies;
 	unsigned char b;
 
-	if (amiga_model == AMI_600) {
+	if (AMIGAHW_PRESENT(A600_PCMCIA)) {
 		gayle_reset = 0x00;
 		while (time_before(jiffies, reset_start_time + 1*HZ/100));
 		READ_ONCE(gayle_reset);
