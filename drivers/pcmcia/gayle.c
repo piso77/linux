@@ -320,28 +320,16 @@ static struct pccard_operations gayle_pcmcia_operations = {
 	.set_mem_map	= gayle_pcmcia_set_mem_map,
 };
 
-static int gayle_pcmcia_drv_suspend(struct device *dev, pm_message_t state)
-{
-	return pcmcia_socket_dev_suspend(dev, state);
-}
-
-static int gayle_pcmcia_drv_resume(struct device *dev)
-{
-	return pcmcia_socket_dev_resume(dev);
-}
-
 static struct device_driver gayle_pcmcia_driver = {
 	.name = "gayle-pcmcia",
 	.bus = &platform_bus_type,
-	.suspend = gayle_pcmcia_drv_suspend,
-	.resume = gayle_pcmcia_drv_resume,
 };
 
 static int __init init_gayle_pcmcia(void)
 {
 	int err;
 
-	
+
 	if (!AMIGAHW_PRESENT(PCMCIA)) {
 		return -ENODEV;
 	} else {
