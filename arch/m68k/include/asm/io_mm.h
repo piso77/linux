@@ -203,7 +203,7 @@ static inline u32 *isa_mtl(long addr)
   switch(ISA_TYPE)
     {
 #ifdef CONFIG_AMIGA_PCMCIA
-    case AG_ISA: return (u32 *)addr;
+    case ISA_TYPE_AG: return (u32 *)addr;
 #endif
     default: return 0; /* avoid warnings, just in case */
     }
@@ -341,10 +341,8 @@ static inline void isa_delay(void)
 #define outsl   isa_outsl
 #define readb   isa_readb
 #define readw   isa_readw
-#define readl   isa_readl
 #define writeb  isa_writeb
 #define writew  isa_writew
-#define writel  isa_writel
 #endif  /* CONFIG_ISA && !CONFIG_ATARI_ROM_ISA */
 
 #ifdef CONFIG_ATARI_ROM_ISA
