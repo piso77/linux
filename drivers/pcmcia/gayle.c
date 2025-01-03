@@ -258,7 +258,7 @@ static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *sock, struct pccard_me
 	return 0;
 }
 
-static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev, struct pt_regs *regs)
+static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 {
     u_char sstat, ints, latch, ack = 0xfc;
     u_int events = 0;
@@ -361,7 +361,7 @@ static int __init init_gayle_pcmcia(void)
 
 	gayle.config = 0;
 
-	if ((err = request_irq(IRQ_AMIGA_GAYLE_SOCKET, gayle_pcmcia_interrupt, 0, "Gayle PCMCIA status", &socket)) < 0) {
+	if ((err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_interrupt, 0, "Gayle PCMCIA status", &socket)) < 0) {
 		driver_unregister(&gayle_pcmcia_driver);
 		release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
 		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
@@ -369,14 +369,14 @@ static int __init init_gayle_pcmcia(void)
 		return err;
 	}
 
-	printk(KERN_INFO "  status change on irq %d\n", IRQ_AMIGA_GAYLE_SOCKET);
+	printk(KERN_INFO "  status change on irq %d\n", IRQ_AMIGA_EXTER);
 	socket.psocket.owner = THIS_MODULE;
 	socket.psocket.ops = &gayle_pcmcia_operations;
 	socket.psocket.resource_ops = &pccard_semistatic_ops;
 	socket.psocket.features = SS_CAP_STATIC_MAP|SS_CAP_PCCARD;
 	socket.psocket.irq_mask = 0;
 	socket.psocket.map_size = PAGE_SIZE;
-	socket.psocket.pci_irq = IRQ_AMIGA_GAYLE_IRQ;
+	socket.psocket.pci_irq = IRQ_AMIGA_PORTS;
 	socket.psocket.io_offset = 0;
 
 	socket.intena = (gayle.inten & ~GAYLE_IRQ_IDE);
@@ -388,7 +388,7 @@ static int __init init_gayle_pcmcia(void)
 						      NULL, 0);
 
 	if (IS_ERR(socket.pdev)) {
-		free_irq(IRQ_AMIGA_GAYLE_SOCKET, &socket);
+		free_irq(IRQ_AMIGA_EXTER, &socket);
 		driver_unregister(&gayle_pcmcia_driver);
 		release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
 		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
@@ -400,7 +400,7 @@ static int __init init_gayle_pcmcia(void)
 
 	if ((err = pcmcia_register_socket(&socket.psocket))) {
 		platform_device_unregister(socket.pdev);
-		free_irq(IRQ_AMIGA_GAYLE_SOCKET, &socket);
+		free_irq(IRQ_AMIGA_EXTER, &socket);
 		driver_unregister(&gayle_pcmcia_driver);
 		release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
 		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
@@ -419,7 +419,7 @@ static void __exit exit_gayle_pcmcia(void)
 
 	pcmcia_unregister_socket(&socket.psocket);
 	gayle.inten &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
-	free_irq(IRQ_AMIGA_GAYLE_SOCKET, &socket);
+	free_irq(IRQ_AMIGA_EXTER, &socket);
 	platform_device_unregister(socket.pdev);
 	driver_unregister(&gayle_pcmcia_driver);
 	release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
