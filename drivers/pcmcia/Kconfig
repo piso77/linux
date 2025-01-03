@@ -234,7 +234,7 @@ config PCMCIA_PROBE
 
 config PCMCIA_GAYLE
 	tristate "Gayle support"
-	depends on AMIGA && PCMCIA && EXPERIMENTAL
+	depends on AMIGA && PCMCIA
 	select AMIGA_PCMCIA
 	select PCCARD_SEMISTATIC
 	help
