@@ -99,10 +99,7 @@ static int gayle_pcmcia_get_socket(struct pcmcia_socket *s, socket_state_t *stat
 static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *state)
 {
 	u_char oldreg, reg;
-	u_long flags;
 	u_int changed;
-    
-	local_irq_save(flags);	/* Don't want interrupts happening here */
 
 	socket.iocard = (state->flags & SS_IOCARD) ? 1 : 0;
 	oldreg = reg = gayle.config;
@@ -198,8 +195,6 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 		gayle.inten = reg;
 		socket.intena = (gayle.inten & (GAYLE_IRQ_CCDET|GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
 	}
-
-	local_irq_restore(flags);
 
 	return 0;
 }
@@ -349,8 +344,8 @@ static int __init init_gayle_pcmcia(void)
 		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
 		release_mem_region(GAYLE_RAM, GAYLE_RAMSIZE);
 		return -EBUSY;
-	}		
-	
+	}
+
 	if (driver_register(&gayle_pcmcia_driver)) {
 		release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
 		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
@@ -412,10 +407,6 @@ static int __init init_gayle_pcmcia(void)
 
 static void __exit exit_gayle_pcmcia(void)
 {
-	u_long flags;
-
-	local_irq_save(flags);	/* Don't want interrupts happening here */	
-
 	pcmcia_unregister_socket(&socket.psocket);
 	gayle.inten &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
 	free_irq(IRQ_AMIGA_EXTER, &socket);
@@ -424,8 +415,6 @@ static void __exit exit_gayle_pcmcia(void)
 	release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
 	release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
 	release_mem_region(GAYLE_RAM, GAYLE_RAMSIZE);
-
-	local_irq_restore(flags);
 }
 
 module_init(init_gayle_pcmcia);
