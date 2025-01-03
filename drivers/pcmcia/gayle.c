@@ -5,7 +5,6 @@
  */
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/interrupt.h>
 #include <linux/delay.h>
@@ -13,9 +12,9 @@
 #include <asm/io.h>
 #include <asm/irq.h>
 
-#include <pcmcia/cs_types.h>
-#include <pcmcia/cs.h>
 #include <pcmcia/ss.h>
+#include <pcmcia/cistpl.h>
+#include "cs_internal.h"
 
 #include <asm/amigaints.h>
 #include <asm/amipcmcia.h>
