@@ -56,8 +56,10 @@
 #ifdef CONFIG_AMIGA_PCMCIA
 #include <asm/amigayle.h>
 
-#define AG_ISA_IO_B(ioaddr) ( GAYLE_IO+(ioaddr)+(((ioaddr)&1)*GAYLE_ODD) )
-#define AG_ISA_IO_W(ioaddr) ( GAYLE_IO+(ioaddr) )
+extern unsigned long gayle_get_byte_base(unsigned long);
+
+#define AG_ISA_IO_B(ioaddr) ( gayle_get_byte_base(ioaddr) )
+#define AG_ISA_IO_W(ioaddr) ( ZTWO_VADDR(GAYLE_IO)+(ioaddr) )
 
 #ifndef MULTI_ISA
 #define MULTI_ISA 0
@@ -196,23 +198,31 @@ static inline u16 __iomem *isa_mtw(unsigned long addr)
     default: return NULL; /* avoid warnings, just in case */
     }
 }
+static inline u32 *isa_mtl(long addr)
+{
+  switch(ISA_TYPE)
+    {
+#ifdef CONFIG_AMIGA_PCMCIA
+    case AG_ISA: return (u32 *)addr;
+#endif
+    default: return 0; /* avoid warnings, just in case */
+    }
+}
 
 
 #define isa_inb(port)      in_8(isa_itb(port))
-#define isa_inw(port)      (ISA_SEX ? in_be16(isa_itw(port)) : in_le16(isa_itw(port)))
-#define isa_inl(port)      (ISA_SEX ? in_be32(isa_itl(port)) : in_le32(isa_itl(port)))
+#define isa_inw(port)      in_le16(isa_itw(port))
+#define isa_inl(port)      in_le32(isa_itl(port))
 #define isa_outb(val,port) out_8(isa_itb(port),(val))
-#define isa_outw(val,port) (ISA_SEX ? out_be16(isa_itw(port),(val)) : out_le16(isa_itw(port),(val)))
-#define isa_outl(val,port) (ISA_SEX ? out_be32(isa_itl(port),(val)) : out_le32(isa_itl(port),(val)))
+#define isa_outw(val,port) out_le16(isa_itw(port),(val))
+#define isa_outl(val,port) out_le32(isa_itl(port),(val))
 
 #define isa_readb(p)       in_8(isa_mtb((unsigned long)(p)))
-#define isa_readw(p)       \
-	(ISA_SEX ? in_be16(isa_mtw((unsigned long)(p)))	\
-		 : in_le16(isa_mtw((unsigned long)(p))))
+#define isa_readw(p)       in_le16(isa_mtw((unsigned long)(p)))
+#define isa_readl(p)       in_le32(isa_mtl((unsigned long)(p)))
 #define isa_writeb(val,p)  out_8(isa_mtb((unsigned long)(p)),(val))
-#define isa_writew(val,p)  \
-	(ISA_SEX ? out_be16(isa_mtw((unsigned long)(p)),(val))	\
-		 : out_le16(isa_mtw((unsigned long)(p)),(val)))
+#define isa_writew(val,p)  out_le16(isa_mtw((unsigned long)(p)),(val))
+#define isa_writel(val,p)  out_le32(isa_mtl((unsigned long)(p)),(val))
 
 #ifdef CONFIG_ATARI_ROM_ISA
 #define isa_rom_inb(port)      rom_in_8(isa_itb(port))
@@ -331,8 +341,10 @@ static inline void isa_delay(void)
 #define outsl   isa_outsl
 #define readb   isa_readb
 #define readw   isa_readw
+#define readl   isa_readl
 #define writeb  isa_writeb
 #define writew  isa_writew
+#define writel  isa_writel
 #endif  /* CONFIG_ISA && !CONFIG_ATARI_ROM_ISA */
 
 #ifdef CONFIG_ATARI_ROM_ISA
