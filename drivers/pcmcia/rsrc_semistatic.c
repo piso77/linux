@@ -13,66 +13,39 @@
  * (C) 1999		David A. Hinds
  */
 
-#include <linux/config.h>
+#include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/pci.h>
 
 #include <pcmcia/ss.h>
+#include <pcmcia/cistpl.h>
+#include "cs_internal.h"
 
 MODULE_AUTHOR("David A. Hinds, Dominik Brodowski");
 MODULE_LICENSE("GPL");
-
-/*
- * Linux resource management extensions
- */
-static struct resource *
-make_resource(unsigned long b, unsigned long n, int flags, char *name)
-{
-	struct resource *res = kmalloc(sizeof(*res), GFP_KERNEL);
-
-	if (res) {
-		memset(res, 0, sizeof(*res));
-		res->name = name;
-		res->start = b;
-		res->end = b + n - 1;
-		res->flags = flags;
-	}
-	return res;
-}
 
 struct pcmcia_align_data {
 	unsigned long	mask;
 	unsigned long	offset;
 };
 
-static void
-pcmcia_align(void *align_data, struct resource *res,
-	     unsigned long size, unsigned long align)
+static resource_size_t
+pcmcia_align(void *align_data, const struct resource *res,
+	     resource_size_t size, resource_size_t align)
 {
 	struct pcmcia_align_data *data = align_data;
-	unsigned long start;
+	resource_size_t start;
 
 	start = (res->start & ~data->mask) + data->offset;
 	if (start < res->start)
 		start += data->mask + 1;
-	res->start = start;
-
-#ifdef CONFIG_X86
-        if (res->flags & IORESOURCE_IO) {
-                if (start & 0x300) {
-                        start = (start + 0x3ff) & ~0x3ff;
-                        res->start = start;
-                }
-        }
-#endif
 
 #ifdef CONFIG_M68K
-        if (res->flags & IORESOURCE_IO) {
-		if ((res->start + size - 1) >= 1024)
-			res->start = res->end;
-	}
+        if (res->flags & IORESOURCE_IO)
+		if ((start + size - 1) >= 1024)
+			start = res->end;
 #endif
+	return start;
 }
 
 /*======================================================================
@@ -88,20 +61,21 @@ pcmcia_align(void *align_data, struct resource *res,
 
 ======================================================================*/
 
-static struct resource *semistatic_find_io_region(unsigned long base, int num,
-		   unsigned long align, struct pcmcia_socket *s)
+static int semistatic_find_io_region(struct pcmcia_socket *s, unsigned int attr,
+						  unsigned int *base, unsigned int num,
+						  unsigned int align, struct resource **parent)
 {
-	struct resource *res = make_resource(0, num, IORESOURCE_IO,
-					     s->dev.class_id);
+	struct resource *res = pcmcia_make_resource(0, num, IORESOURCE_IO,
+					     dev_name(&s->dev));
 	struct pcmcia_align_data data;
-	unsigned long min = base;
+	unsigned long min = *base;
 	int ret;
 
 	if (align == 0)
 		align = 0x10000;
 
 	data.mask = align - 1;
-	data.offset = base & data.mask;
+	data.offset = *base & data.mask;
 
 #ifdef CONFIG_PCI
 	if (s->cb_dev) {
@@ -114,31 +88,25 @@ static struct resource *semistatic_find_io_region(unsigned long base, int num,
 
 	if (ret != 0) {
 		kfree(res);
-		res = NULL;
+		return -EINVAL;
 	}
-	return res;
+	*parent = res;
+	return 0;
 }
 
 static int semistatic_init(struct pcmcia_socket *s)
 {
-	unsigned long flags;
-
 	/* the good thing about SS_CAP_STATIC_MAP sockets is
 	 * that they don't need a resource database */
 
-	spin_lock_irqsave(&s->lock, flags);
 	s->resource_setup_done = 1;
-	spin_unlock_irqrestore(&s->lock, flags);
-
 	return 0;
 }
 
 struct pccard_resource_ops pccard_semistatic_ops = {
 	.validate_mem = NULL,
-	.adjust_io_region = NULL,
 	.find_io = semistatic_find_io_region,
 	.find_mem = NULL,
-	.adjust_resource = NULL,
 	.init = semistatic_init,
 	.exit = NULL,
 };
