@@ -353,6 +353,7 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 
 	printk(KERN_INFO "  status change on irq %d\n", IRQ_AMIGA_EXTER);
 	socket->psocket.owner = THIS_MODULE;
+	socket->psocket.dev.parent = &pdev->dev;
 	socket->psocket.ops = &gayle_pcmcia_operations;
 	socket->psocket.resource_ops = &pccard_semistatic_ops;
 	socket->psocket.features = SS_CAP_STATIC_MAP|SS_CAP_PCCARD;
