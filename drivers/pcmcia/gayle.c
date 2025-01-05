@@ -368,7 +368,8 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 	gayle.intreq = (0xfc & ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
 	socket->speed = 250;
 
-	if ((err = pcmcia_register_socket(&socket->psocket)))
+	err = pcmcia_register_socket(&socket->psocket);
+	if (err)
 		goto out2;
 
 	return 0;
