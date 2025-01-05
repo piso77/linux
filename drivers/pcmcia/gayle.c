@@ -324,6 +324,25 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
     return IRQ_HANDLED;
 }
 
+static irqreturn_t gayle_stschg_irq(int irq, void *data)
+{
+	unsigned char pcmcia_intreq;
+	struct gayle_socket_info *socket = data;
+
+	pcmcia_intreq = pcmcia_get_intreq();
+	if (!(pcmcia_intreq & (GAYLE_IRQ_SC | GAYLE_IRQ_DA | GAYLE_IRQ_WR |
+			       GAYLE_IRQ_IRQ)))
+		return IRQ_NONE;
+
+	pr_info("%s::%d intreq: 0x%x\n", __func__, __LINE__, pcmcia_intreq);
+	pcmcia_ack_int(pcmcia_get_intreq());
+	pr_info("%s::%d intreq: 0x%x\n", __func__, __LINE__, pcmcia_get_intreq());
+	pcmcia_parse_events(&socket->psocket, SS_STSCHG);
+	pr_info("%s::%d intreq: 0x%x\n", __func__, __LINE__, pcmcia_get_intreq());
+
+	return IRQ_HANDLED;
+}
+
 static struct pccard_operations gayle_pcmcia_operations = {
 	.init		= gayle_pcmcia_init,
 	.get_status	= gayle_pcmcia_get_status,
@@ -356,7 +375,13 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 	err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_interrupt, IRQF_SHARED,
 			       "Gayle PCMCIA status", socket);
 	if (err)
+		goto out2;
+
+	err = request_irq(IRQ_AMIGA_PORTS, gayle_stschg_irq, IRQF_SHARED,
+			  "pcmcia_stschg", socket);
+	if (err)
 		goto out1;
+
 
 	printk(KERN_INFO "  status change on irq %d\n", IRQ_AMIGA_EXTER);
 	socket->psocket.owner = THIS_MODULE;
@@ -384,14 +409,16 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 
 	err = pcmcia_register_socket(&socket->psocket);
 	if (err)
-		goto out2;
+		goto out;
+
 	pcmcia_enable_irq();
 
 	return 0;
-
-out2:
-	free_irq(IRQ_AMIGA_EXTER, socket);
+out:
+	free_irq(IRQ_AMIGA_PORTS, socket);
 out1:
+	free_irq(IRQ_AMIGA_EXTER, socket);
+out2:
 	kfree(socket);
 	return err;
 }
@@ -400,6 +427,7 @@ static int exit_gayle_pcmcia(struct platform_device *pdev)
 {
 	gayle.inten &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
 	free_irq(IRQ_AMIGA_EXTER, socket);
+	free_irq(IRQ_AMIGA_PORTS, socket);
 	pcmcia_unregister_socket(&socket->psocket);
 	kfree(socket);
 
