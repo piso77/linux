@@ -345,7 +345,9 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 
 	gayle.config = 0;
 
-	if ((err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_interrupt, 0, "Gayle PCMCIA status", socket)) < 0)
+	err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_interrupt, IRQF_SHARED,
+			       "Gayle PCMCIA status", socket);
+	if (err)
 		goto out1;
 
 	printk(KERN_INFO "  status change on irq %d\n", IRQ_AMIGA_EXTER);
