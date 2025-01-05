@@ -66,6 +66,7 @@ static int gayle_pcmcia_get_status(struct pcmcia_socket *s, u_int *value)
 	return 0;
 }
 
+#if 0
 static int gayle_pcmcia_get_socket(struct pcmcia_socket *s, socket_state_t *state)
 {
 	u_char reg, vpp;
@@ -96,6 +97,7 @@ static int gayle_pcmcia_get_socket(struct pcmcia_socket *s, socket_state_t *stat
 
 	return 0;
 }
+#endif
 
 static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *state)
 {
