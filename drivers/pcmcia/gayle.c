@@ -393,7 +393,7 @@ static int __init init_gayle_pcmcia(void)
 		return PTR_ERR(socket.pdev);
 	}
 
-	socket.psocket.dev.dev = &socket.pdev->dev;
+	socket.psocket.dev.parent = &socket.pdev->dev;
 
 	if ((err = pcmcia_register_socket(&socket.psocket))) {
 		platform_device_unregister(socket.pdev);
