@@ -20,10 +20,6 @@
 #include <asm/amigaints.h>
 #include <asm/amipcmcia.h>
 
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Kars de Jong <jongk@linux-m68k.org>");
-MODULE_DESCRIPTION("Linux PCMCIA Card Services: Amiga Gayle Socket Controller");
-
 struct gayle_socket_info {
 	struct pcmcia_socket	psocket;
 	struct platform_device *pdev;
@@ -40,8 +36,8 @@ struct gayle_socket_info {
 	u_char			Vcc:6;
 	u_short			speed;
 };
+struct gayle_socket_info *socket;
 
-static struct gayle_socket_info socket;
 #define to_gayle_socket(x) container_of(x, struct gayle_socket_info, psocket)
 
 static int gayle_pcmcia_init(struct pcmcia_socket *s)
@@ -51,14 +47,15 @@ static int gayle_pcmcia_init(struct pcmcia_socket *s)
 
 static int gayle_pcmcia_get_status(struct pcmcia_socket *s, u_int *value)
 {
+	struct gayle_socket_info *socket = to_gayle_socket(s);
 	u_char status;
 	u_int val = 0;
 
 	status = gayle.cardstatus;
-	if (socket.Vcc)
+	if (socket->Vcc)
 		val |= SS_POWERON;
 	val |= (status & GAYLE_CS_CCDET) ? SS_DETECT : 0;
-	if (socket.iocard) {
+	if (socket->iocard) {
 		val |= (status & GAYLE_CS_SC) ? SS_STSCHG : 0;
 	} else {
 		val |= (status & GAYLE_CS_WR) ? 0 : SS_WRPROT;
@@ -106,10 +103,11 @@ static int gayle_pcmcia_get_socket(struct pcmcia_socket *s, socket_state_t *stat
 
 static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *state)
 {
+	struct gayle_socket_info *socket = to_gayle_socket(s);
 	u_char oldreg, reg;
 	u_int changed;
 
-	socket.iocard = (state->flags & SS_IOCARD) ? 1 : 0;
+	socket->iocard = (state->flags & SS_IOCARD) ? 1 : 0;
 	oldreg = reg = gayle.config;
 	reg &= ~GAYLE_VPP_MASK;
 	switch (state->Vcc) {
@@ -117,7 +115,7 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 	case 50:	break;
 	default:	return -EINVAL;
 	}
-	socket.Vcc = state->Vcc;
+	socket->Vcc = state->Vcc;
 	switch (state->Vpp) {
 	case 0:	break;
 	case 50:	reg |= GAYLE_CFG_5V; break;
@@ -129,21 +127,21 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 		gayle.config = reg;
 
 	if (state->flags & SS_RESET) {
-		socket.reset_inten = gayle.inten;
-		gayle.inten = (socket.reset_inten & ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
+		socket->reset_inten = gayle.inten;
+		gayle.inten = (socket->reset_inten & ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
 		gayle.intreq = 0xff;
-		socket.reset = 1;
-	} else if (socket.reset) {
+		socket->reset = 1;
+	} else if (socket->reset) {
 		gayle.intreq = 0xfc;
 		udelay(10);
 		gayle.intreq = (0xfc & ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
-		gayle.inten = socket.reset_inten;
-		socket.reset = 0;
+		gayle.inten = socket->reset_inten;
+		socket->reset = 0;
 	}
 
 	oldreg = reg = (gayle.cardstatus & (GAYLE_CS_WR|GAYLE_CS_DA|GAYLE_CS_DAEN));
 
-	if (socket.iocard) {
+	if (socket->iocard) {
 		if (state->flags & SS_OUTPUT_ENA) {
 			reg |= GAYLE_CS_WR|GAYLE_CS_DAEN;
 		}
@@ -160,8 +158,8 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 	}
 
 	/* Card status change interrupt mask */
-	changed = socket.csc_mask ^ state->csc_mask;
-	socket.csc_mask = state->csc_mask;
+	changed = socket->csc_mask ^ state->csc_mask;
+	socket->csc_mask = state->csc_mask;
 	oldreg = reg = gayle.inten;
 
 	if (changed & SS_DETECT) {
@@ -201,7 +199,7 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 
 	if (reg != oldreg) {
 		gayle.inten = reg;
-		socket.intena = (gayle.inten & (GAYLE_IRQ_CCDET|GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
+		socket->intena = (gayle.inten & (GAYLE_IRQ_CCDET|GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
 	}
 
 	return 0;
@@ -240,7 +238,7 @@ static void gayle_pcmcia_set_speed(u_short speed) {
 
 static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *sock, struct pccard_mem_map *map)
 {
-	struct gayle_socket_info *skt = to_gayle_socket(sock);
+	struct gayle_socket_info *socket = to_gayle_socket(sock);
 	u_long start;
 
 	if (map->map >= MAX_WIN)
@@ -249,11 +247,11 @@ static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *sock, struct pccard_me
 	gayle_pcmcia_set_speed(map->speed);
 
 	if (map->flags & MAP_ATTRIB) {
-		start = skt->attr;
+		start = socket->attr;
 		if (map->flags & MAP_ACTIVE)
 			gayle_pcmcia_set_speed(720);
 	} else {
-		start = skt->mem;
+		start = socket->mem;
 	}
 
 	map->static_start = start + map->card_start;
@@ -263,13 +261,14 @@ static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *sock, struct pccard_me
 
 static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 {
+	struct gayle_socket_info *socket = dev;
     u_char sstat, ints, latch, ack = 0xfc;
     u_int events = 0;
 
     ints = gayle.intreq;
 
     sstat = gayle.cardstatus;
-    latch = ints & socket.intena;
+    latch = ints & socket->intena;
 
     if (latch & GAYLE_IRQ_CCDET) {
 	    /* Check for card removal */
@@ -277,7 +276,7 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 		    /* Better clear all ints */
 		    ack &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
 		    /* Turn off all IO interrupts */
-		    if (socket.iocard) {
+		    if (socket->iocard) {
 			    gayle.inten &= ~GAYLE_IRQ_IRQ;
 			    gayle.cardstatus = 0;
 		    }
@@ -311,7 +310,7 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
     gayle.intreq = ack;
 
     if (events)
-	    pcmcia_parse_events(&socket.psocket, events);
+	    pcmcia_parse_events(&socket->psocket, events);
 
     return IRQ_HANDLED;
 }
@@ -324,86 +323,79 @@ static struct pccard_operations gayle_pcmcia_operations = {
 	.set_mem_map	= gayle_pcmcia_set_mem_map,
 };
 
-static struct device_driver gayle_pcmcia_driver = {
-	.name = "gayle-pcmcia",
-	.bus = &platform_bus_type,
-};
-
-static int __init init_gayle_pcmcia(void)
+static int init_gayle_pcmcia(struct platform_device *pdev)
 {
 	struct resource *r;
 	int err;
 
+	socket = kzalloc(sizeof(struct gayle_socket_info), GFP_KERNEL);
+	if (!socket)
+		return -ENOMEM;
 
-	if (!AMIGAHW_PRESENT(PCMCIA)) {
-		return -ENODEV;
-	} else {
-		printk(KERN_INFO "Amiga Gayle PCMCIA found, 1 socket\n");
-	}
+	printk(KERN_INFO "Amiga Gayle PCMCIA found, 1 socket\n");
 
-	r = platform_get_resource_byname(socket.pdev, IORESOURCE_MEM, "Gayle attribute");
-	socket.attr = r->start;
+	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "Gayle attribute");
+	socket->attr = r->start;
 
-	r = platform_get_resource_byname(socket.pdev, IORESOURCE_MEM, "Gayle memory");
-	socket.mem = r->start;
+	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "Gayle memory");
+	socket->mem = r->start;
 
-	r = platform_get_resource_byname(socket.pdev, IORESOURCE_MEM, "Gayle I/O");
-	socket.io = r->start;
-
-	if (driver_register(&gayle_pcmcia_driver))
-		return -1;
+	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "Gayle I/O");
+	socket->io = r->start;
 
 	gayle.config = 0;
 
-	if ((err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_interrupt, 0, "Gayle PCMCIA status", &socket)) < 0) {
-		driver_unregister(&gayle_pcmcia_driver);
-		return err;
-	}
+	if ((err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_interrupt, 0, "Gayle PCMCIA status", socket)) < 0)
+		goto out1;
 
 	printk(KERN_INFO "  status change on irq %d\n", IRQ_AMIGA_EXTER);
-	socket.psocket.owner = THIS_MODULE;
-	socket.psocket.ops = &gayle_pcmcia_operations;
-	socket.psocket.resource_ops = &pccard_semistatic_ops;
-	socket.psocket.features = SS_CAP_STATIC_MAP|SS_CAP_PCCARD;
-	socket.psocket.irq_mask = 0;
-	socket.psocket.map_size = PAGE_SIZE;
-	socket.psocket.pci_irq = IRQ_AMIGA_PORTS;
-	socket.psocket.io_offset = 0;
+	socket->psocket.owner = THIS_MODULE;
+	socket->psocket.ops = &gayle_pcmcia_operations;
+	socket->psocket.resource_ops = &pccard_semistatic_ops;
+	socket->psocket.features = SS_CAP_STATIC_MAP|SS_CAP_PCCARD;
+	socket->psocket.irq_mask = 0;
+	socket->psocket.map_size = PAGE_SIZE;
+	socket->psocket.pci_irq = IRQ_AMIGA_PORTS;
+	socket->psocket.io_offset = 0;
 
-	socket.intena = (gayle.inten & ~GAYLE_IRQ_IDE);
+	platform_set_drvdata(pdev, socket);
+
+	socket->intena = (gayle.inten & ~GAYLE_IRQ_IDE);
 	gayle.cardstatus = 0;
 	gayle.intreq = (0xfc & ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
-	socket.speed = 250;
+	socket->speed = 250;
 
-	socket.pdev = platform_device_register_simple("gayle-pcmcia", -1,
-						      NULL, 0);
+	if ((err = pcmcia_register_socket(&socket->psocket)))
+		goto out2;
 
-	if (IS_ERR(socket.pdev)) {
-		free_irq(IRQ_AMIGA_EXTER, &socket);
-		driver_unregister(&gayle_pcmcia_driver);
-		return PTR_ERR(socket.pdev);
-	}
+	return 0;
 
-	socket.psocket.dev.parent = &socket.pdev->dev;
+out2:
+	free_irq(IRQ_AMIGA_EXTER, socket);
+out1:
+	kfree(socket);
+	return err;
+}
 
-	if ((err = pcmcia_register_socket(&socket.psocket))) {
-		platform_device_unregister(socket.pdev);
-		free_irq(IRQ_AMIGA_EXTER, &socket);
-		driver_unregister(&gayle_pcmcia_driver);
-		return err;
-	}
+static int exit_gayle_pcmcia(struct platform_device *pdev)
+{
+	gayle.inten &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
+	free_irq(IRQ_AMIGA_EXTER, socket);
+	pcmcia_unregister_socket(&socket->psocket);
+	kfree(socket);
 
 	return 0;
 }
 
-static void __exit exit_gayle_pcmcia(void)
-{
-	pcmcia_unregister_socket(&socket.psocket);
-	gayle.inten &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
-	free_irq(IRQ_AMIGA_EXTER, &socket);
-	platform_device_unregister(socket.pdev);
-	driver_unregister(&gayle_pcmcia_driver);
-}
+static struct platform_driver gayle_pcmcia_driver = {
+	.driver = {
+		.name	= "amiga-gayle-pcmcia",
+	},
+	.probe		= init_gayle_pcmcia,
+	.remove		= exit_gayle_pcmcia,
+};
+module_platform_driver(gayle_pcmcia_driver);
 
-module_init(init_gayle_pcmcia);
-module_exit(exit_gayle_pcmcia);
+MODULE_AUTHOR("Paolo Pisati");
+MODULE_DESCRIPTION("Commodore's Gayle PC Card controller driver");
+MODULE_LICENSE("GPL v2");
