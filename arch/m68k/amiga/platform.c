@@ -124,6 +124,28 @@ static const struct gayle_ide_platform_data a4000_ide_pdata __initconst = {
 };
 
 
+static const struct resource a1200_pcmcia_resource[] __initconst = {
+       [0] = {
+               .name   = "Gayle memory",
+               .start  = GAYLE_RAM,
+               .end    = GAYLE_RAM+GAYLE_RAMSIZE-1,
+               .flags  = IORESOURCE_MEM,
+       },
+       [1] = {
+               .name   = "Gayle attribute",
+               .start  = GAYLE_ATTRIBUTE,
+               .end    = GAYLE_ATTRIBUTE+GAYLE_ATTRIBUTESIZE-1,
+               .flags  = IORESOURCE_MEM,
+       },
+       [2] = {
+               .name   = "Gayle I/O",
+               .start  = GAYLE_IO,
+               .end    = GAYLE_IO+(2*GAYLE_IOSIZE)-1,
+               .flags  = IORESOURCE_MEM,
+       }
+};
+
+
 static const struct resource amiga_rtc_resource __initconst = {
 	.start	= 0x00dc0000,
 	.end	= 0x00dcffff,
@@ -190,6 +212,14 @@ static int __init amiga_init_devices(void)
 						 sizeof(a1200_ide_pdata));
 		if (error)
 			return error;
+	}
+
+	if (AMIGAHW_PRESENT(PCMCIA)) {
+		pdev = platform_device_register_simple("amiga-gayle-pcmcia", -1,
+						       a1200_pcmcia_resource,
+						       ARRAY_SIZE(a1200_pcmcia_resource));
+		if (IS_ERR(pdev))
+			return PTR_ERR(pdev);
 	}
 
 	if (AMIGAHW_PRESENT(A4000_IDE)) {

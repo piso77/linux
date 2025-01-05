@@ -25,8 +25,13 @@ MODULE_AUTHOR("Kars de Jong <jongk@linux-m68k.org>");
 MODULE_DESCRIPTION("Linux PCMCIA Card Services: Amiga Gayle Socket Controller");
 
 struct gayle_socket_info {
-	struct platform_device *pdev;
 	struct pcmcia_socket	psocket;
+	struct platform_device *pdev;
+
+	phys_addr_t		attr;
+	phys_addr_t		io;
+	phys_addr_t		mem;
+
 	u_int			csc_mask;
 	u_char			reset_inten;
 	u_char			intena;
@@ -37,6 +42,7 @@ struct gayle_socket_info {
 };
 
 static struct gayle_socket_info socket;
+#define to_gayle_socket(x) container_of(x, struct gayle_socket_info, psocket)
 
 static int gayle_pcmcia_init(struct pcmcia_socket *s)
 {
@@ -234,6 +240,7 @@ static void gayle_pcmcia_set_speed(u_short speed) {
 
 static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *sock, struct pccard_mem_map *map)
 {
+	struct gayle_socket_info *skt = to_gayle_socket(sock);
 	u_long start;
 
 	if (map->map >= MAX_WIN)
@@ -242,11 +249,11 @@ static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *sock, struct pccard_me
 	gayle_pcmcia_set_speed(map->speed);
 
 	if (map->flags & MAP_ATTRIB) {
-		start = GAYLE_ATTRIBUTE;
+		start = skt->attr;
 		if (map->flags & MAP_ACTIVE)
 			gayle_pcmcia_set_speed(720);
 	} else {
-		start = GAYLE_RAM;
+		start = skt->mem;
 	}
 
 	map->static_start = start + map->card_start;
@@ -324,6 +331,7 @@ static struct device_driver gayle_pcmcia_driver = {
 
 static int __init init_gayle_pcmcia(void)
 {
+	struct resource *r;
 	int err;
 
 
@@ -333,35 +341,22 @@ static int __init init_gayle_pcmcia(void)
 		printk(KERN_INFO "Amiga Gayle PCMCIA found, 1 socket\n");
 	}
 
-	if (!request_mem_region(GAYLE_RAM, GAYLE_RAMSIZE, "PCMCIA common memory"))
-		return -EBUSY;
+	r = platform_get_resource_byname(socket.pdev, IORESOURCE_MEM, "Gayle attribute");
+	socket.attr = r->start;
 
-	if (!request_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE,
-				"PCMCIA attribute memory")) {
-		release_mem_region(GAYLE_RAM, GAYLE_RAMSIZE);
-		return -EBUSY;
-	}
+	r = platform_get_resource_byname(socket.pdev, IORESOURCE_MEM, "Gayle memory");
+	socket.mem = r->start;
 
-	if (!request_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE, "PCMCIA I/O ports")) {
-		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
-		release_mem_region(GAYLE_RAM, GAYLE_RAMSIZE);
-		return -EBUSY;
-	}
+	r = platform_get_resource_byname(socket.pdev, IORESOURCE_MEM, "Gayle I/O");
+	socket.io = r->start;
 
-	if (driver_register(&gayle_pcmcia_driver)) {
-		release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
-		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
-		release_mem_region(GAYLE_RAM, GAYLE_RAMSIZE);
+	if (driver_register(&gayle_pcmcia_driver))
 		return -1;
-	}
 
 	gayle.config = 0;
 
 	if ((err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_interrupt, 0, "Gayle PCMCIA status", &socket)) < 0) {
 		driver_unregister(&gayle_pcmcia_driver);
-		release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
-		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
-		release_mem_region(GAYLE_RAM, GAYLE_RAMSIZE);
 		return err;
 	}
 
@@ -386,9 +381,6 @@ static int __init init_gayle_pcmcia(void)
 	if (IS_ERR(socket.pdev)) {
 		free_irq(IRQ_AMIGA_EXTER, &socket);
 		driver_unregister(&gayle_pcmcia_driver);
-		release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
-		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
-		release_mem_region(GAYLE_RAM, GAYLE_RAMSIZE);
 		return PTR_ERR(socket.pdev);
 	}
 
@@ -398,9 +390,6 @@ static int __init init_gayle_pcmcia(void)
 		platform_device_unregister(socket.pdev);
 		free_irq(IRQ_AMIGA_EXTER, &socket);
 		driver_unregister(&gayle_pcmcia_driver);
-		release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
-		release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
-		release_mem_region(GAYLE_RAM, GAYLE_RAMSIZE);
 		return err;
 	}
 
@@ -414,9 +403,6 @@ static void __exit exit_gayle_pcmcia(void)
 	free_irq(IRQ_AMIGA_EXTER, &socket);
 	platform_device_unregister(socket.pdev);
 	driver_unregister(&gayle_pcmcia_driver);
-	release_mem_region(GAYLE_IO, 2*GAYLE_IOSIZE);
-	release_mem_region(GAYLE_ATTRIBUTE, GAYLE_ATTRIBUTESIZE);
-	release_mem_region(GAYLE_RAM, GAYLE_RAMSIZE);
 }
 
 module_init(init_gayle_pcmcia);
