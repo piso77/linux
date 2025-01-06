@@ -351,7 +351,6 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "Gayle I/O");
 	socket->io = r->start;
 
-	gayle.config = 0;
 
 	err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_interrupt, IRQF_SHARED,
 			       "Gayle PCMCIA status", socket);
@@ -371,6 +370,12 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, socket);
 
+	gayle.config = 0;
+	pcmcia_reset();
+	pcmcia_program_voltage(PCMCIA_0V);
+	pcmcia_access_speed(PCMCIA_SPEED_250NS);
+	pcmcia_write_enable();
+
 	socket->intena = (gayle.inten & ~GAYLE_IRQ_IDE);
 	gayle.cardstatus = 0;
 	gayle.intreq = (0xfc & ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
@@ -379,6 +384,7 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 	err = pcmcia_register_socket(&socket->psocket);
 	if (err)
 		goto out2;
+	pcmcia_enable_irq();
 
 	return 0;
 
