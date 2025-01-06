@@ -330,17 +330,14 @@ static irqreturn_t gayle_stschg_irq(int irq, void *data)
 	struct gayle_socket_info *socket = data;
 
 	pcmcia_intreq = pcmcia_get_intreq();
-	if (!(pcmcia_intreq & (GAYLE_IRQ_SC | GAYLE_IRQ_DA | GAYLE_IRQ_WR |
-			       GAYLE_IRQ_IRQ)))
+	if (!(pcmcia_intreq & GAYLE_IRQ_IRQ))
 		return IRQ_NONE;
 
 	pr_info("%s::%d intreq: 0x%x\n", __func__, __LINE__, pcmcia_intreq);
-	pcmcia_ack_int(pcmcia_get_intreq());
-	pr_info("%s::%d intreq: 0x%x\n", __func__, __LINE__, pcmcia_get_intreq());
+	pcmcia_ack_int(pcmcia_get_intreq()); // ack int at gayle level to avoid an interrupt storm
 	pcmcia_parse_events(&socket->psocket, SS_STSCHG);
-	pr_info("%s::%d intreq: 0x%x\n", __func__, __LINE__, pcmcia_get_intreq());
 
-	return IRQ_HANDLED;
+	return IRQ_NONE;
 }
 
 static struct pccard_operations gayle_pcmcia_operations = {
