@@ -108,6 +108,10 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 	u_char oldreg, reg;
 	u_int changed;
 
+	pr_err("%s::%d cardstatus: 0x%x\n", __func__, __LINE__, gayle.cardstatus);
+	pr_err("%s::%d intreq: 0x%x\n", __func__, __LINE__,gayle.intreq);
+	pr_err("%s::%d inten: 0x%x\n", __func__, __LINE__, gayle.inten);
+	pr_err("%s::%d config: 0x%x\n", __func__, __LINE__, gayle.config);
 	socket->iocard = (state->flags & SS_IOCARD) ? 1 : 0;
 	oldreg = reg = gayle.config;
 	reg &= ~GAYLE_VPP_MASK;
@@ -203,6 +207,10 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 		socket->intena = (gayle.inten & (GAYLE_IRQ_CCDET|GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
 	}
 
+	pr_err("%s::%d cardstatus: 0x%x\n", __func__, __LINE__, gayle.cardstatus);
+	pr_err("%s::%d intreq: 0x%x\n", __func__, __LINE__,gayle.intreq);
+	pr_err("%s::%d inten: 0x%x\n", __func__, __LINE__, gayle.inten);
+	pr_err("%s::%d config: 0x%x\n", __func__, __LINE__, gayle.config);
 	return 0;
 }
 
