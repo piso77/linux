@@ -444,15 +444,13 @@ out2:
 	return err;
 }
 
-static int exit_gayle_pcmcia(struct platform_device *pdev)
+static void exit_gayle_pcmcia(struct platform_device *pdev)
 {
 	gayle.inten &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
 	free_irq(IRQ_AMIGA_EXTER, socket);
 	free_irq(IRQ_AMIGA_PORTS, socket);
 	pcmcia_unregister_socket(&socket->psocket);
 	kfree(socket);
-
-	return 0;
 }
 
 static struct platform_driver gayle_pcmcia_driver = {
