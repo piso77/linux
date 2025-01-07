@@ -262,7 +262,4 @@ config PCCARD_NONSTATIC
 config PCCARD_IODYN
 	bool
 
-config PCCARD_SEMISTATIC
-	tristate
-
 endif	# PCCARD
