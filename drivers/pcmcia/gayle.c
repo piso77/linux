@@ -282,7 +282,7 @@ static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *s, struct pccard_mem_m
 	return 0;
 }
 
-static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
+static irqreturn_t gayle_pcmcia_socket_interrupt(int irq, void *dev)
 {
 	struct gayle_socket_info *socket = dev;
 	u_char sstat, ints, latch, ack = 0xfc;
@@ -348,19 +348,20 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 	return IRQ_HANDLED;
 }
 
+/*
+ * The sole purpose of this handler is to ack the incoming PCMCIA card's
+ * interrupt at gayle's level to avoid an interrupt storm
+ */
 static irqreturn_t gayle_pcmcia_dummy_interrupt(int irq, void *data)
 {
-	unsigned char pcmcia_intreq;
 	struct gayle_socket_info *socket = data;
 
-	pcmcia_intreq = pcmcia_get_intreq();
-	if (!(pcmcia_intreq & GAYLE_IRQ_IRQ))
+	if (!(pcmcia_get_intreq() & GAYLE_IRQ_IRQ))
 		return IRQ_NONE;
 
 	dev_dbg(&socket->psocket.dev, "%s::%d intreq: 0x%x\n", __func__, __LINE__,
-		pcmcia_intreq);
-	pcmcia_ack_int(pcmcia_get_intreq()); // ack int at gayle level to avoid an interrupt storm
-	pcmcia_parse_events(&socket->psocket, SS_STSCHG);
+		pcmcia_get_intreq());
+	gayle.intreq = 0xf8;
 
 	return IRQ_NONE;
 }
@@ -394,13 +395,13 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 	socket->io = r->start;
 
 
-	err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_interrupt, IRQF_SHARED,
-			       "Gayle PCMCIA status", socket);
+	err = request_irq(IRQ_AMIGA_EXTER, gayle_pcmcia_socket_interrupt, IRQF_SHARED,
+			       "Gayle PCMCIA socket", socket);
 	if (err)
 		goto out2;
 
 	err = request_irq(IRQ_AMIGA_PORTS, gayle_pcmcia_dummy_interrupt, IRQF_SHARED,
-			  "pcmcia_stschg", socket);
+			  "Gayle PCMCIA dummy", socket);
 	if (err)
 		goto out1;
 
