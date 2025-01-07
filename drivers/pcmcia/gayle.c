@@ -271,57 +271,57 @@ static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *sock, struct pccard_me
 static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 {
 	struct gayle_socket_info *socket = dev;
-    u_char sstat, ints, latch, ack = 0xfc;
-    u_int events = 0;
+	u_char sstat, ints, latch, ack = 0xfc;
+	u_int events = 0;
 
-    ints = gayle.intreq;
+	ints = gayle.intreq;
 
-    sstat = gayle.cardstatus;
-    latch = ints & socket->intena;
+	sstat = gayle.cardstatus;
+	latch = ints & socket->intena;
 
-    if (latch & GAYLE_IRQ_CCDET) {
-	    /* Check for card removal */
-	    if (!(gayle.cardstatus & GAYLE_CS_CCDET)) {
-		    /* Better clear all ints */
-		    ack &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
-		    /* Turn off all IO interrupts */
-		    if (socket->iocard) {
-			    gayle.inten &= ~GAYLE_IRQ_IRQ;
-			    gayle.cardstatus = 0;
-		    }
-		    /* Don't do the rest unless a card is present */
-		    latch &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
-	    }
-	    ack &= ~GAYLE_IRQ_CCDET;
-	    events |= SS_DETECT;
-    }
+	if (latch & GAYLE_IRQ_CCDET) {
+		/* Check for card removal */
+		if (!(gayle.cardstatus & GAYLE_CS_CCDET)) {
+			/* Better clear all ints */
+			ack &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
+			/* Turn off all IO interrupts */
+			if (socket->iocard) {
+				gayle.inten &= ~GAYLE_IRQ_IRQ;
+				gayle.cardstatus = 0;
+			}
+			/* Don't do the rest unless a card is present */
+			latch &= ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY);
+		}
+		ack &= ~GAYLE_IRQ_CCDET;
+		events |= SS_DETECT;
+	}
 
-    if (latch & GAYLE_IRQ_BSY) {
-	    ack &= ~GAYLE_IRQ_BSY;
-	    events |= SS_READY;
-    }
+	if (latch & GAYLE_IRQ_BSY) {
+		ack &= ~GAYLE_IRQ_BSY;
+		events |= SS_READY;
+	}
 
-    if (latch & GAYLE_IRQ_BVD2) {
-	    ack &= ~GAYLE_IRQ_BVD2;
-	    events |= SS_BATWARN;
-    }
+	if (latch & GAYLE_IRQ_BVD2) {
+		ack &= ~GAYLE_IRQ_BVD2;
+		events |= SS_BATWARN;
+	}
 
-    if (latch & GAYLE_IRQ_BVD1) {
-	    ack &= ~GAYLE_IRQ_BVD1;
-	    events |= SS_BATDEAD;
-    }
+	if (latch & GAYLE_IRQ_BVD1) {
+		ack &= ~GAYLE_IRQ_BVD1;
+		events |= SS_BATDEAD;
+	}
 
-    if (latch & GAYLE_IRQ_SC) {
-	    ack &= ~GAYLE_IRQ_SC;
-	    events |= SS_STSCHG;
-    }
+	if (latch & GAYLE_IRQ_SC) {
+		ack &= ~GAYLE_IRQ_SC;
+		events |= SS_STSCHG;
+	}
 
-    gayle.intreq = ack;
+	gayle.intreq = ack;
 
-    if (events)
-	    pcmcia_parse_events(&socket->psocket, events);
+	if (events)
+		pcmcia_parse_events(&socket->psocket, events);
 
-    return IRQ_HANDLED;
+	return IRQ_HANDLED;
 }
 
 static irqreturn_t gayle_stschg_irq(int irq, void *data)
