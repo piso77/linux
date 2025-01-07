@@ -111,7 +111,7 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 	u_char oldreg, reg;
 	u_int changed;
 
-	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x"
+	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "SS_RESET: %d socket->reset: %d\n", __func__, __LINE__,
 	       gayle.cardstatus, gayle.intreq, gayle.inten, gayle.config,
 	       (state->flags & SS_RESET) ? 1 : 0, socket->reset);
@@ -211,7 +211,7 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 		socket->intena = (gayle.inten & (GAYLE_IRQ_CCDET|GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
 	}
 
-	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x"
+	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "SS_RESET: %d socket->reset: %d\n", __func__, __LINE__,
 	       gayle.cardstatus, gayle.intreq, gayle.inten, gayle.config,
 	       (state->flags & SS_RESET) ? 1 : 0, socket->reset);
@@ -283,9 +283,11 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 	u_char sstat, ints, latch, ack = 0xfc;
 	u_int events = 0;
 
-	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x"
+#if 0
+	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "socket->iocard: %d\n", __func__, __LINE__, gayle.cardstatus,
 	       gayle.intreq, gayle.inten, gayle.config, socket->iocard);
+#endif
 
 	ints = gayle.intreq;
 
@@ -334,9 +336,11 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 	if (events)
 		pcmcia_parse_events(&socket->psocket, events);
 
-	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x"
+#if 0
+	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "socket->iocard: %d\n", __func__, __LINE__, gayle.cardstatus,
 	       gayle.intreq, gayle.inten, gayle.config, socket->iocard);
+#endif
 
 	return IRQ_HANDLED;
 }
