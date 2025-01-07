@@ -288,7 +288,7 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 	if (!(ints & GAYLE_IRQ_CCDET))
 		return IRQ_NONE;
 
-	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x"
+	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "socket->iocard: %d\n", __func__, __LINE__, gayle.cardstatus,
 	       gayle.intreq, gayle.inten, gayle.config, socket->iocard);
 
