@@ -145,6 +145,10 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 		udelay(10);
 		gayle.intreq = (0xfc & ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
 		gayle.inten = socket->reset_inten;
+
+		/* after reset, re-enable irq card line */
+		pcmcia_enable_irq();
+
 		socket->reset = 0;
 	}
 
@@ -427,8 +431,6 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 	err = pcmcia_register_socket(&socket->psocket);
 	if (err)
 		goto out;
-
-	pcmcia_enable_irq();
 
 	return 0;
 out:
