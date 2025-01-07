@@ -2,6 +2,7 @@
  * Device driver for the Amiga Gayle PCMCIA controller
  *
  * (C) Copyright 2000-2005 Kars de Jong <jongk@linux-m68k.org>
+ * (C) Copyright 2025 Paolo Pisati <p.pisati@gmail.com>
  */
 #include <linux/module.h>
 #include <linux/init.h>
@@ -449,3 +450,8 @@ static void __exit exit_gayle_pcmcia(void)
 
 module_init(init_gayle_pcmcia);
 module_exit(exit_gayle_pcmcia);
+
+MODULE_AUTHOR("Kars de Jong <jongk@linux-m68k.org>");
+MODULE_AUTHOR("Paolo Pisati <p.pisati@gmail.com>");
+MODULE_DESCRIPTION("Amiga Gayle PCMCIA controller");
+MODULE_LICENSE("GPL v2");
