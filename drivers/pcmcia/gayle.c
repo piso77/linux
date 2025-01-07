@@ -384,7 +384,7 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 	socket->psocket.owner = THIS_MODULE;
 	socket->psocket.dev.parent = &pdev->dev;
 	socket->psocket.ops = &gayle_pcmcia_operations;
-	socket->psocket.resource_ops = &pccard_semistatic_ops;
+	socket->psocket.resource_ops = &pccard_iodyn_ops;
 	socket->psocket.features = SS_CAP_STATIC_MAP|SS_CAP_PCCARD;
 	socket->psocket.irq_mask = 0;
 	socket->psocket.map_size = PAGE_SIZE;

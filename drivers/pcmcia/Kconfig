@@ -236,7 +236,7 @@ config PCMCIA_GAYLE
 	tristate "Gayle support"
 	depends on AMIGA && PCMCIA
 	select AMIGA_PCMCIA
-	select PCCARD_SEMISTATIC
+	select PCCARD_IODYN
 	help
 	  Say Y here to include support for the PCMCIA socket
 	  found on the A600 and A1200.
