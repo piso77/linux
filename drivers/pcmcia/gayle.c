@@ -230,18 +230,18 @@ static int gayle_pcmcia_set_io_map(struct pcmcia_socket *sock, struct pccard_io_
 }
 
 static void gayle_pcmcia_set_speed(u_short speed) {
-    u_char s;
+	u_char s;
 
-    if (speed <= 100)
-	s = GAYLE_CFG_100NS;
-    else if (speed <= 150)
-	s = GAYLE_CFG_150NS;
-    else if (speed <= 250)
-	s = GAYLE_CFG_250NS;
-    else
-	s = GAYLE_CFG_720NS;
+	if (speed <= 100)
+		s = GAYLE_CFG_100NS;
+	else if (speed <= 150)
+		s = GAYLE_CFG_150NS;
+	else if (speed <= 250)
+		s = GAYLE_CFG_250NS;
+	else
+		s = GAYLE_CFG_720NS;
 
-    gayle.config = (gayle.config & ~GAYLE_SPEED_MASK) | s;
+	gayle.config = (gayle.config & ~GAYLE_SPEED_MASK) | s;
 }
 
 static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *sock, struct pccard_mem_map *map)
