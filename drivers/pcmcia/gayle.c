@@ -392,6 +392,7 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, socket);
 
+	/* put gayle in a sane state */
 	gayle.config = 0;
 	pcmcia_reset();
 	pcmcia_program_voltage(PCMCIA_0V);
