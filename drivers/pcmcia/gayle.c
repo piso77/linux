@@ -42,7 +42,7 @@ struct gayle_socket_info *socket;
 
 static int gayle_pcmcia_init(struct pcmcia_socket *s)
 {
-	pr_err("%s::%d\n", __func__, __LINE__);
+	dev_dbg(&s->dev, "%s::%d\n", __func__, __LINE__);
 
 	return 0;
 }
@@ -53,7 +53,7 @@ static int gayle_pcmcia_get_status(struct pcmcia_socket *s, u_int *value)
 	u_char status;
 	u_int val = 0;
 
-	pr_err("%s::%d\n", __func__, __LINE__);
+	dev_dbg(&s->dev, "%s::%d\n", __func__, __LINE__);
 
 	status = gayle.cardstatus;
 	if (socket->Vcc)
@@ -111,7 +111,7 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 	u_char oldreg, reg;
 	u_int changed;
 
-	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
+	dev_dbg(&s->dev, "%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "SS_RESET: %d socket->reset: %d\n", __func__, __LINE__,
 	       gayle.cardstatus, gayle.intreq, gayle.inten, gayle.config,
 	       (state->flags & SS_RESET) ? 1 : 0, socket->reset);
@@ -215,7 +215,7 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 		socket->intena = (gayle.inten & (GAYLE_IRQ_CCDET|GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
 	}
 
-	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
+	dev_dbg(&s->dev, "%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "SS_RESET: %d socket->reset: %d\n", __func__, __LINE__,
 	       gayle.cardstatus, gayle.intreq, gayle.inten, gayle.config,
 	       (state->flags & SS_RESET) ? 1 : 0, socket->reset);
@@ -223,12 +223,12 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 	return 0;
 }
 
-static int gayle_pcmcia_set_io_map(struct pcmcia_socket *sock, struct pccard_io_map *map)
+static int gayle_pcmcia_set_io_map(struct pcmcia_socket *s, struct pccard_io_map *map)
 {
-	pr_err("%s::%d\n", __func__, __LINE__);
+	dev_dbg(&s->dev, "%s::%d\n", __func__, __LINE__);
 
 	if (map->map >= MAX_IO_WIN) {
-		printk(KERN_ERR "%s(): map (%d) out of range\n", __FUNCTION__,
+		pr_err("%s(): map (%d) out of range\n", __FUNCTION__,
 		       map->map);
 		return -1;
 	}
@@ -256,12 +256,12 @@ static void gayle_pcmcia_set_speed(u_short speed) {
 	gayle.config = (gayle.config & ~GAYLE_SPEED_MASK) | s;
 }
 
-static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *sock, struct pccard_mem_map *map)
+static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *s, struct pccard_mem_map *map)
 {
-	struct gayle_socket_info *socket = to_gayle_socket(sock);
+	struct gayle_socket_info *socket = to_gayle_socket(s);
 	u_long start;
 
-	pr_err("%s::%d\n", __func__, __LINE__);
+	dev_dbg(&s->dev, "%s::%d\n", __func__, __LINE__);
 
 	if (map->map >= MAX_WIN)
 		return -EINVAL;
@@ -291,7 +291,7 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 	if (!(ints & GAYLE_IRQ_CCDET))
 		return IRQ_NONE;
 
-	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
+	dev_dbg(&socket->pdev->dev, "%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "socket->iocard: %d\n", __func__, __LINE__, gayle.cardstatus,
 	       gayle.intreq, gayle.inten, gayle.config, socket->iocard);
 
@@ -340,7 +340,7 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 	if (events)
 		pcmcia_parse_events(&socket->psocket, events);
 
-	pr_err("%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
+	dev_dbg(&socket->pdev->dev, "%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "socket->iocard: %d\n", __func__, __LINE__, gayle.cardstatus,
 	       gayle.intreq, gayle.inten, gayle.config, socket->iocard);
 
@@ -356,7 +356,8 @@ static irqreturn_t gayle_pcmcia_dummy_interrupt(int irq, void *data)
 	if (!(pcmcia_intreq & GAYLE_IRQ_IRQ))
 		return IRQ_NONE;
 
-	pr_info("%s::%d intreq: 0x%x\n", __func__, __LINE__, pcmcia_intreq);
+	dev_dbg(&socket->pdev->dev, "%s::%d intreq: 0x%x\n", __func__, __LINE__,
+		pcmcia_intreq);
 	pcmcia_ack_int(pcmcia_get_intreq()); // ack int at gayle level to avoid an interrupt storm
 	pcmcia_parse_events(&socket->psocket, SS_STSCHG);
 
@@ -380,7 +381,7 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 	if (!socket)
 		return -ENOMEM;
 
-	printk(KERN_INFO "Amiga Gayle PCMCIA found, 1 socket\n");
+	pr_info("Amiga Gayle PCMCIA found, 1 socket\n");
 
 	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "Gayle attribute");
 	socket->attr = r->start;
@@ -403,7 +404,7 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 		goto out1;
 
 
-	printk(KERN_INFO "  status change on irq %d\n", IRQ_AMIGA_EXTER);
+	pr_info("  status change on irq %d\n", IRQ_AMIGA_EXTER);
 	socket->psocket.owner = THIS_MODULE;
 	socket->psocket.dev.parent = &pdev->dev;
 	socket->psocket.ops = &gayle_pcmcia_operations;
