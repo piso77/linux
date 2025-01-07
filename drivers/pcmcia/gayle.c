@@ -292,7 +292,7 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 	if (!(ints & GAYLE_IRQ_CCDET))
 		return IRQ_NONE;
 
-	dev_dbg(&socket->pdev->dev, "%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
+	dev_dbg(&socket->psocket.dev, "%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "socket->iocard: %d\n", __func__, __LINE__, gayle.cardstatus,
 	       gayle.intreq, gayle.inten, gayle.config, socket->iocard);
 
@@ -341,7 +341,7 @@ static irqreturn_t gayle_pcmcia_interrupt(int irq, void *dev)
 	if (events)
 		pcmcia_parse_events(&socket->psocket, events);
 
-	dev_dbg(&socket->pdev->dev, "%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
+	dev_dbg(&socket->psocket.dev, "%s::%d cardstatus: 0x%x intreq: 0x%x inten: 0x%x config: 0x%x "
 	       "socket->iocard: %d\n", __func__, __LINE__, gayle.cardstatus,
 	       gayle.intreq, gayle.inten, gayle.config, socket->iocard);
 
@@ -357,7 +357,7 @@ static irqreturn_t gayle_pcmcia_dummy_interrupt(int irq, void *data)
 	if (!(pcmcia_intreq & GAYLE_IRQ_IRQ))
 		return IRQ_NONE;
 
-	dev_dbg(&socket->pdev->dev, "%s::%d intreq: 0x%x\n", __func__, __LINE__,
+	dev_dbg(&socket->psocket.dev, "%s::%d intreq: 0x%x\n", __func__, __LINE__,
 		pcmcia_intreq);
 	pcmcia_ack_int(pcmcia_get_intreq()); // ack int at gayle level to avoid an interrupt storm
 	pcmcia_parse_events(&socket->psocket, SS_STSCHG);
