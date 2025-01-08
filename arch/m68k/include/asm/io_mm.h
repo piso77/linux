@@ -201,16 +201,30 @@ static inline u16 __iomem *isa_mtw(unsigned long addr)
 
 
 #define isa_inb(port)      in_8(isa_itb(port))
+#define isa_outb(val,port) out_8(isa_itb(port),(val))
+#define isa_readb(p)       in_8(isa_mtb((unsigned long)(p)))
+#define isa_writeb(val,p)  out_8(isa_mtb((unsigned long)(p)),(val))
+
+#ifdef CONFIG_PCMCIA_GAYLE
 #define isa_inw(port)      in_le16(isa_itw(port))
 #define isa_inl(port)      in_le32(isa_itl(port))
-#define isa_outb(val,port) out_8(isa_itb(port),(val))
 #define isa_outw(val,port) out_le16(isa_itw(port),(val))
 #define isa_outl(val,port) out_le32(isa_itl(port),(val))
-
-#define isa_readb(p)       in_8(isa_mtb((unsigned long)(p)))
 #define isa_readw(p)       in_le16(isa_mtw((unsigned long)(p)))
-#define isa_writeb(val,p)  out_8(isa_mtb((unsigned long)(p)),(val))
 #define isa_writew(val,p)  out_le16(isa_mtw((unsigned long)(p)),(val))
+#else
+#define isa_inw(port)	   (ISA_SEX ? in_be16(isa_itw(port)) : in_le16(isa_itw(port)))
+#define isa_inl(port)	   (ISA_SEX ? in_be32(isa_itl(port)) : in_le32(isa_itl(port)))
+#define isa_outw(val,port) (ISA_SEX ? out_be16(isa_itw(port),(val)) : out_le16(isa_itw(port),(val)))
+#define isa_outl(val,port) (ISA_SEX ? out_be32(isa_itl(port),(val)) : out_le32(isa_itl(port),(val)))
+#define isa_readw(p)	   \
+	(ISA_SEX ? in_be16(isa_mtw((unsigned long)(p))) \
+	 : in_le16(isa_mtw((unsigned long)(p))))
+#define isa_writew(val,p)  \
+	(ISA_SEX ? out_be16(isa_mtw((unsigned long)(p)),(val))  \
+	 : out_le16(isa_mtw((unsigned long)(p)),(val)))
+#endif
+
 
 #ifdef CONFIG_ATARI_ROM_ISA
 #define isa_rom_inb(port)      rom_in_8(isa_itb(port))
