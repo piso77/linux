@@ -162,24 +162,24 @@ unsigned long gayle_get_byte_base(unsigned long port)
 
 	/* Simple case first */
 	if (!(port & 1)) {
-		return (ZTWO_VADDR(GAYLE_IO) + port);
+		return (GAYLE_IO + port);
 	}
 
 	for (i = 0, map = gayle_io_maps; i < MAX_IO_WIN; i++, map++) {
 		if ((map->flags & MAP_ACTIVE) &&
 		    (port >= map->start) && (port <= map->stop)) {
 			if (map->flags & MAP_16BIT) {
-				return (ZTWO_VADDR(GAYLE_IO) + port);
+				return (GAYLE_IO + port);
 			} else {
 				/* Assume MAP_AUTOSZ works this way */
-				return ((ZTWO_VADDR(GAYLE_IO) + port) + ((port & 1) * GAYLE_ODD));
+				return (GAYLE_IO + port + ((port & 1) * GAYLE_ODD));
 			}
 		}
 	}
 
 	/* I'd like to make this case break, but I can't since sometimes an I/O access
 	   is done after a card has been removed. */
-	return (ZTWO_VADDR(GAYLE_IO) + port);
+	return (GAYLE_IO + port);
 }
 
 EXPORT_SYMBOL(gayle_set_io_win);

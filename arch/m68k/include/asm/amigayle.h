@@ -22,13 +22,13 @@
 
 /* memory layout */
 
-#define GAYLE_RAM		(0x600000)
+#define GAYLE_RAM		(0x600000+zTwoBase)
 #define GAYLE_RAMSIZE		(0x400000)
-#define GAYLE_ATTRIBUTE		(0xa00000)
+#define GAYLE_ATTRIBUTE		(0xa00000+zTwoBase)
 #define GAYLE_ATTRIBUTESIZE	(0x020000)
-#define GAYLE_IO		(0xa20000)	/* 16bit and even 8bit registers */
+#define GAYLE_IO		(0xa20000+zTwoBase)	/* 16bit and even 8bit registers */
 #define GAYLE_IOSIZE		(0x010000)
-#define GAYLE_IO_8BITODD	(0xa30000)	/* odd 8bit registers */
+#define GAYLE_IO_8BITODD	(0xa30000+zTwoBase)	/* odd 8bit registers */
 
 /* offset for accessing odd IO registers */
 #define GAYLE_ODD		(GAYLE_IO_8BITODD-GAYLE_IO-1)
@@ -57,7 +57,7 @@ struct GAYLE {
 #define gayle (*(volatile struct GAYLE *)(zTwoBase+GAYLE_ADDRESS))
 #define gayle_reset (*(volatile u_char *)(zTwoBase+GAYLE_RESET))
 
-#define gayle_attribute ((volatile u_char *)(zTwoBase+GAYLE_ATTRIBUTE))
+#define gayle_attribute ((volatile u_char *)(GAYLE_ATTRIBUTE))
 
 /* GAYLE_CARDSTATUS bit def */
 

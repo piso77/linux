@@ -59,7 +59,7 @@
 extern unsigned long gayle_get_byte_base(unsigned long);
 
 #define AG_ISA_IO_B(ioaddr) ( gayle_get_byte_base(ioaddr) )
-#define AG_ISA_IO_W(ioaddr) ( ZTWO_VADDR(GAYLE_IO)+(ioaddr) )
+#define AG_ISA_IO_W(ioaddr) ( GAYLE_IO+(ioaddr) )
 
 #ifndef MULTI_ISA
 #define MULTI_ISA 0
