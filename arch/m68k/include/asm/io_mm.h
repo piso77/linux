@@ -198,16 +198,6 @@ static inline u16 __iomem *isa_mtw(unsigned long addr)
     default: return NULL; /* avoid warnings, just in case */
     }
 }
-static inline u32 *isa_mtl(long addr)
-{
-  switch(ISA_TYPE)
-    {
-#ifdef CONFIG_AMIGA_PCMCIA
-    case ISA_TYPE_AG: return (u32 *)addr;
-#endif
-    default: return 0; /* avoid warnings, just in case */
-    }
-}
 
 
 #define isa_inb(port)      in_8(isa_itb(port))
@@ -219,10 +209,8 @@ static inline u32 *isa_mtl(long addr)
 
 #define isa_readb(p)       in_8(isa_mtb((unsigned long)(p)))
 #define isa_readw(p)       in_le16(isa_mtw((unsigned long)(p)))
-#define isa_readl(p)       in_le32(isa_mtl((unsigned long)(p)))
 #define isa_writeb(val,p)  out_8(isa_mtb((unsigned long)(p)),(val))
 #define isa_writew(val,p)  out_le16(isa_mtw((unsigned long)(p)),(val))
-#define isa_writel(val,p)  out_le32(isa_mtl((unsigned long)(p)),(val))
 
 #ifdef CONFIG_ATARI_ROM_ISA
 #define isa_rom_inb(port)      rom_in_8(isa_itb(port))
