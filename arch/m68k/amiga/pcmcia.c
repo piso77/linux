@@ -32,31 +32,36 @@ static unsigned char cfg_byte = GAYLE_CFG_0V|GAYLE_CFG_150NS;
 /* PCMCIA I/O maps */
 static struct gayle_io_map gayle_io_maps[MAX_IO_WIN];
 
+/*
+ * according to NetBSD code (commit e26e7a8a2278 and 100db321d09e in [1])
+ * and depending on Gayle's revision, there are two methods for a PCMCIA
+ * soft reset
+ *
+ * 1: https://github.com/NetBSD/src.git
+ */
 void pcmcia_reset(void)
 {
-	unsigned long flags;
 	unsigned long reset_start_time = jiffies;
 	unsigned char b;
 
-	if (AMIGAHW_PRESENT(A600_PCMCIA)) {
-		gayle_reset = 0x00;
-		while (time_before(jiffies, reset_start_time + 1*HZ/100));
-		READ_ONCE(gayle_reset);
-	} else {
-		/* The (official) A600 way to reset the card doesn't work on the A1200 */
-		local_irq_save(flags);
-		/* We need to be careful not to trigger any interrupts */
-		b = gayle.inten;
-		gayle.inten = 0;
-		gayle.intreq = 0xff;
-		udelay(10);
-		gayle.intreq = 0xfc;
-		/* Allow status lines to settle */
-		udelay(20);
-		gayle.intreq = (0xfc & ~(GAYLE_IRQ_CCDET|GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
-		gayle.inten = b;
-		local_irq_restore(flags);
-	}
+	/* The (official) A600 way to reset the card doesn't work on the A1200 */
+	/* We need to be careful not to trigger any interrupts */
+	b = gayle.inten;
+	gayle.inten = 0;
+	gayle.intreq = 0xff;
+	udelay(10);
+	gayle.intreq = 0xfc;
+	/* Allow status lines to settle */
+	udelay(20);
+
+	gayle_reset = 0x00;
+	while (time_before(jiffies, reset_start_time + 1*HZ/100));
+	READ_ONCE(gayle_reset);
+	/* Allow status lines to settle */
+	udelay(20);
+
+	gayle.intreq = (0xfc & ~(GAYLE_IRQ_CCDET|GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
+	gayle.inten = b;
 }
 EXPORT_SYMBOL(pcmcia_reset);
 
