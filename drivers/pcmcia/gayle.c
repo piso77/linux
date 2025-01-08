@@ -142,9 +142,7 @@ static int gayle_pcmcia_set_socket(struct pcmcia_socket *s, socket_state_t *stat
 		gayle.intreq = 0xff;
 		socket->reset = 1;
 	} else if (socket->reset) {
-		gayle.intreq = 0xfc;
-		udelay(10);
-		gayle.intreq = (0xfc & ~(GAYLE_IRQ_BVD1|GAYLE_IRQ_BVD2|GAYLE_IRQ_WR|GAYLE_IRQ_BSY));
+		pcmcia_reset();
 		gayle.inten = socket->reset_inten;
 
 		/* after reset, re-enable irq card line */
