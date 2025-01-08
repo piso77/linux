@@ -242,21 +242,6 @@ static int gayle_pcmcia_set_io_map(struct pcmcia_socket *s, struct pccard_io_map
 	return 0;
 }
 
-static void gayle_pcmcia_set_speed(u_short speed) {
-	u_char s;
-
-	if (speed <= 100)
-		s = GAYLE_CFG_100NS;
-	else if (speed <= 150)
-		s = GAYLE_CFG_150NS;
-	else if (speed <= 250)
-		s = GAYLE_CFG_250NS;
-	else
-		s = GAYLE_CFG_720NS;
-
-	gayle.config = (gayle.config & ~GAYLE_SPEED_MASK) | s;
-}
-
 static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *s, struct pccard_mem_map *map)
 {
 	struct gayle_socket_info *socket = to_gayle_socket(s);
@@ -267,12 +252,12 @@ static int gayle_pcmcia_set_mem_map(struct pcmcia_socket *s, struct pccard_mem_m
 	if (map->map >= MAX_WIN)
 		return -EINVAL;
 
-	gayle_pcmcia_set_speed(map->speed);
+	pcmcia_access_speed(map->speed);
 
 	if (map->flags & MAP_ATTRIB) {
 		start = socket->attr;
 		if (map->flags & MAP_ACTIVE)
-			gayle_pcmcia_set_speed(720);
+			pcmcia_access_speed(720);
 	} else {
 		start = socket->mem;
 	}
