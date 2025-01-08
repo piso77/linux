@@ -219,10 +219,10 @@ static inline u16 __iomem *isa_mtw(unsigned long addr)
 #define isa_outl(val,port) (ISA_SEX ? out_be32(isa_itl(port),(val)) : out_le32(isa_itl(port),(val)))
 #define isa_readw(p)	   \
 	(ISA_SEX ? in_be16(isa_mtw((unsigned long)(p))) \
-	 : in_le16(isa_mtw((unsigned long)(p))))
+		: in_le16(isa_mtw((unsigned long)(p))))
 #define isa_writew(val,p)  \
 	(ISA_SEX ? out_be16(isa_mtw((unsigned long)(p)),(val))  \
-	 : out_le16(isa_mtw((unsigned long)(p)),(val)))
+		: out_le16(isa_mtw((unsigned long)(p)),(val)))
 #endif
 
 
