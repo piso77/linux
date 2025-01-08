@@ -33,8 +33,8 @@ static unsigned char cfg_byte = GAYLE_CFG_0V|GAYLE_CFG_150NS;
 static struct gayle_io_map gayle_io_maps[MAX_IO_WIN];
 
 /*
- * according to NetBSD code (commit e26e7a8a2278 and 100db321d09e in [1])
- * and depending on Gayle's revision, there are two methods for a PCMCIA
+ * according to NetBSD (commit e26e7a8a2278 and 100db321d09e in [1])
+ * and depending on Gayle's revision, there are two methods for a
  * soft reset
  *
  * 1: https://github.com/NetBSD/src.git
