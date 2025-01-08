@@ -405,9 +405,6 @@ static int init_gayle_pcmcia(struct platform_device *pdev)
 	/* put gayle in a sane state */
 	gayle.config = 0;
 	pcmcia_reset();
-	pcmcia_program_voltage(PCMCIA_0V);
-	pcmcia_access_speed(PCMCIA_SPEED_250NS);
-	pcmcia_write_enable();
 
 	socket->intena = (gayle.inten & ~GAYLE_IRQ_IDE);
 	gayle.cardstatus = 0;
