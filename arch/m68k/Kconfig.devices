@@ -26,6 +26,13 @@ config PROC_HARDWARE
 	  including the model, CPU, MMU, clock speed, BogoMIPS rating,
 	  and memory size.
 
+config PROC_WARP_HARDWARE
+	bool "/proc/hardware/warp support"
+	depends on PROC_FS
+	help
+	  Say Y here to support the /proc/hardware/warp files, which gives you
+	  access to information about your Warp accelerator board hardware.
+
 config NATFEAT
 	bool "ARAnyM emulator support"
 	depends on ATARI
